@@ -932,6 +932,24 @@ footer .btn small {
   color: var(--maki-books-navy);
 }
 
+.about-markdown h2 {
+  margin: 0 0 1rem;
+  color: var(--maki-books-navy, #315a73);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 1.1rem;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+}
+
+.about-markdown p { line-height: 1.55; }
+.about-markdown hr { margin: 1.4rem 0; border: 0; border-top: 1px solid rgba(49, 90, 115, 0.2); }
+.about-markdown ul { padding-left: 1.25rem; }
+.about-markdown li { margin-bottom: 0.85rem; line-height: 1.5; }
+.about-markdown li strong { color: var(--maki-books-navy, #315a73); }
+.about-markdown a { color: var(--maki-books-navy, #315a73); font-weight: 600; }
+.about-markdown img { display: block; width: 100%; max-height: 300px; margin: 1rem auto; border-radius: 0.5rem; object-fit: contain; }
+.about-markdown .about-caption { color: #68757d; font-size: 0.82rem; text-align: center; }
+
 @media (max-width: 576px) {
   .welcome-banner {
     bottom: 5.1rem;

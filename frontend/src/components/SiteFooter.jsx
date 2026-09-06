@@ -1,24 +1,74 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { communityCharterIntro, communityCharterPoints, communityCharterClosing } from "../constants/communityCharter";
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
+}
+
+function inlineMarkdown(value) {
+  let html = escapeHtml(value);
+  html = html.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy" />');
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  return html;
+}
+
+function markdownToHtml(markdown) {
+  const lines = markdown.trim().split(/\r?\n/);
+  const blocks = [];
+  let paragraph = [];
+  let list = [];
+  const flushParagraph = () => {
+    if (paragraph.length) blocks.push(`<p>${paragraph.map(inlineMarkdown).join("<br />")}</p>`);
+    paragraph = [];
+  };
+  const flushList = () => {
+    if (list.length) blocks.push(`<ul>${list.map((item) => `<li>${item.map(inlineMarkdown).join("<br />")}</li>`).join("")}</ul>`);
+    list = [];
+  };
+  lines.forEach((line) => {
+    if (!line.trim()) { flushParagraph(); if (!list.length) flushList(); return; }
+    if (line.trim() === "---") { flushParagraph(); flushList(); blocks.push("<hr />"); return; }
+    if (line.startsWith("## ")) { flushParagraph(); flushList(); blocks.push(`<h2>${inlineMarkdown(line.slice(3))}</h2>`); return; }
+    if (line.startsWith("- ")) { flushParagraph(); list.push([line.slice(2)]); return; }
+    if (/^ {2,}\S/.test(line) && list.length) { list[list.length - 1].push(line.trim()); return; }
+    if (line.startsWith("![")) { flushParagraph(); flushList(); blocks.push(inlineMarkdown(line)); return; }
+    if (line.startsWith("*") && line.endsWith("*")) { flushParagraph(); flushList(); blocks.push(`<p class="about-caption">${inlineMarkdown(line)}</p>`); return; }
+    flushList();
+    paragraph.push(line);
+  });
+  flushParagraph();
+  flushList();
+  return blocks.join("");
+}
 
 export default function SiteFooter({ canInstallApp = false, onInstallApp }) {
   const [section, setSection] = useState(null);
+  const [aboutText, setAboutText] = useState("");
   const sourceUrl = import.meta.env.VITE_SOURCE_URL || "https://github.com/damiendevienne/makibooks";
   const supportUrl = import.meta.env.VITE_SUPPORT_URL || "https://buymeacoffee.com/damiendevienne";
+
+  useEffect(() => {
+    fetch("/AboutText.md")
+      .then((response) => response.ok ? response.text() : "")
+      .then(setAboutText)
+      .catch(() => {});
+  }, []);
+
   const content = {
     about: {
       title: "About Maki Books",
-      body: [
-        "We started Maki Books in Heraklion after moving to Crete as a French family and realising we couldn’t bring all the books we wanted to keep reading. 📚 Finding books in French was not always easy, so we created a simple way for local readers to lend and borrow books freely.",
-        "Today, Maki Books is open to every language. 🌍",
-      ],
-      signature: "Made with care by our family. ❤️",
+      markdown: aboutText,
     },
     help: {
       title: "Help",
       body: [
-        "Choose a book to view its details. You need to be logged in to send a borrowing request. Once the owner accepts, use the Discussions area to arrange the handover and confirm each step of the exchange.",
-        "You can install Maki Books on your device so it appears on your home screen and opens like an app, without having to find it in the browser each time. On Android/Chrome, use the browser menu and choose Add to Home screen or Install app. On iPhone/Safari, use Share and then Add to Home Screen.",
+        "Maki Books is a friendly family platform where people can lend and borrow physical books freely with readers around them. 📚",
+        <><strong>Want to borrow a book?</strong> Browse the catalogue, open a book to read its details, and send a request when you find one you would love to read. Once the owner accepts, use Discussions to arrange the handover and confirm each step.</>,
+        <><strong>Want to lend your books?</strong> Add them from My Books, share a few details and let nearby readers discover them. When someone sends a request, you can review it, discuss the handover and keep track of the exchange. Every book you lend can become someone else’s next favourite read. ❤️</>,
+        "Maki Books works on computers and mobile devices! To install it on your phone, open the browser menu and choose Add to Home screen or Install app on Android/Chrome. On iPhone/Safari, use Share, then Add to Home Screen. Once installed, you can enable or disable notifications at any time from Settings: tap the small person-and-cog icon in the top-right corner. 🔔",
+        "If you have a problem or a question, open Settings from that same top-right icon and send us a message from the Feedback section. Your message really helps us improve Maki Books. 😊",
       ],
       installAvailable: true,
     },
@@ -67,7 +117,7 @@ export default function SiteFooter({ canInstallApp = false, onInstallApp }) {
                 <button type="button" className="btn-close" onClick={() => setSection(null)} aria-label="Close" />
               </div>
               <div className="modal-body">
-                {Array.isArray(section.body) ? section.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>) : <p>{section.body}</p>}
+                {section.markdown !== undefined ? (section.markdown ? <div className="about-markdown" dangerouslySetInnerHTML={{ __html: markdownToHtml(section.markdown) }} /> : <p>Loading…</p>) : Array.isArray(section.body) ? section.body.map((paragraph, index) => <p key={index}>{paragraph}</p>) : <p>{section.body}</p>}
                 {section.sourceUrl && <p><a href={section.sourceUrl} target="_blank" rel="noreferrer">Get the source code</a>{" · "}<a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer">Read the AGPLv3 license</a></p>}
                 {section.installAvailable && canInstallApp && <button type="button" className="btn btn-primary w-100 mb-2" onClick={onInstallApp}>Install Maki Books as an app</button>}
                 {section.supportUrl && <a className="support-link" href={section.supportUrl} target="_blank" rel="noreferrer">Buy us a coffee! ☕</a>}
