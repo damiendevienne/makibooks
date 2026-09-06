@@ -41,7 +41,7 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(
     !!localStorage.getItem("jwt")
   );
-  const [showLogin, setShowLogin] = useState(() => new URLSearchParams(window.location.search).get("login") === "1");
+  const [showLogin, setShowLogin] = useState(() => new URLSearchParams(window.location.search).get("login") === "1" && !localStorage.getItem("jwt"));
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [catalogueState, setCatalogueState] = useState("loading");
   const [user, setUser] = useState(
@@ -49,6 +49,10 @@ function App() {
   );
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+  useEffect(() => {
+    if (isLoggedIn) setShowLogin(false);
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const conversationId = new URLSearchParams(window.location.search).get("conversation");

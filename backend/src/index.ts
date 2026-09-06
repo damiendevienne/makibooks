@@ -53,6 +53,7 @@ export default {
         } else if (templateName === 'reset_password') {
           template.options.object = 'Reset your Maki Books password';
           template.options.message = `<p>We received a request to reset your Maki Books password.</p>
+<p>Your username is <strong><%= USER.username %></strong>.</p>
 <p>Click the button below to choose a new password.</p>
 <p><a href="<%= URL %>?code=<%= TOKEN %>" style="display:inline-block;padding:12px 18px;background:#6bb5f3;color:#111;text-decoration:none;border-radius:6px;font-weight:600">Choose a new password</a></p>
 <p>If you did not request this, you can ignore this message.</p>
