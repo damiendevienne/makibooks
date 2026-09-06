@@ -14,6 +14,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 && localStorage.getItem("jwt")) {
+      localStorage.removeItem("jwt");
+      localStorage.removeItem("user");
+      sessionStorage.setItem("makiAuthExpired", "1");
+      window.location.reload();
+    }
+    return Promise.reject(error);
+  },
+);
+
 export const mediaUrl = (url) => (url ? `${api.defaults.baseURL}${url}` : null);
 
 export default api;

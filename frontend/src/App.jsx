@@ -42,7 +42,11 @@ function App() {
     !!localStorage.getItem("jwt")
   );
   const [showLogin, setShowLogin] = useState(() => new URLSearchParams(window.location.search).get("login") === "1" && !localStorage.getItem("jwt"));
-  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [welcomeMessage, setWelcomeMessage] = useState(() => {
+    if (!sessionStorage.getItem("makiAuthExpired")) return "";
+    sessionStorage.removeItem("makiAuthExpired");
+    return "Your session has expired. Please log in again.";
+  });
   const [catalogueState, setCatalogueState] = useState("loading");
   const [user, setUser] = useState(
     JSON.parse(localStorage.getItem("user")) || null
