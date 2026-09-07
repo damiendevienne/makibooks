@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Globe2, LogOut, Mail, Pencil, UserRound } from "lucide-react";
+import { Bell, Globe2, LogOut, Mail, Pencil, UserRound } from "lucide-react";
 import api from "../api";
 import packageJson from "../../package.json";
 import { disablePushNotifications, enablePushNotifications, pushNotificationsAvailable } from "../pushNotifications";
@@ -124,9 +124,11 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             </div>
             }
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
-              <div className="settings-account-title">🔔 Notifications</div>
+              <div className="settings-notification-toggle">
+                <div className="settings-notification-label"><Bell size={17} aria-hidden="true" /><span>Allow notifications</span></div>
+                <button type="button" className={`notification-switch${notificationsEnabled ? " is-on" : ""}`} role="switch" aria-checked={notificationsEnabled} aria-label="Allow notifications" onClick={toggleNotifications}><span aria-hidden="true" /></button>
+              </div>
               <p className="text-muted small mb-2">Get a notification when you receive a new message, even when Maki Books is closed.</p>
-              <button type="button" className="btn btn-outline-primary btn-sm" onClick={toggleNotifications}>{notificationsEnabled ? "Turn off notifications" : "Enable notifications"}</button>
               {notificationStatus && <div className="text-muted small mt-2" role="status">{notificationStatus}</div>}
             </div>}
           </div>
