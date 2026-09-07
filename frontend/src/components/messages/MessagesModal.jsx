@@ -187,7 +187,9 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
   const hasOpenLoan = loans.some((loan) => loan.status === "requested" || loan.status === "active");
   const withinGracePeriod = active?.closedAt && Date.now() - new Date(active.closedAt).getTime() < 24 * 60 * 60 * 1000;
   const conversationClosed = Boolean(loans.length && !hasOpenLoan && !withinGracePeriod);
-  const chatLocked = conversationClosed || loans.some((loan) => loan.status === "requested" && loan.borrower?.id !== user.id);
+  // Both sides can discuss a pending request. The owner may need to ask a
+  // question before deciding whether to accept it.
+  const chatLocked = conversationClosed;
   const refusalIsArchived = (conversation) => {
     const loan = conversation.loans?.find((item) => item.status === "refused");
     if (!loan) return false;
@@ -475,7 +477,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
               <button className="btn btn-success receipt-action-button" onClick={() => askLoanAction(loan, "confirm-received-back")}>✓ I recovered my book</button>
             </div>)}
             <form className="conversation-compose-bar border-top p-2 d-flex gap-2" onSubmit={sendMessage}>
-              <input className="form-control" value={draft} onChange={(e) => setDraft(e.target.value)} disabled={chatLocked} placeholder={conversationClosed ? "This discussion is archived." : chatLocked ? "Chat will be available after the request is accepted." : "Write a message…"} />
+              <input className="form-control" value={draft} onChange={(e) => setDraft(e.target.value)} disabled={chatLocked} placeholder={conversationClosed ? "This discussion is archived." : "Write a message…"} />
               <button className="btn btn-primary" disabled={chatLocked || !draft.trim()}><Send size={17} /></button>
             </form>
           </div>}
