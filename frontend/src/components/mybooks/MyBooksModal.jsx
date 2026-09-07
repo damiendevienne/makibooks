@@ -97,7 +97,6 @@ export default function MyBooksModal({ show, onClose, user, onBookCreated, onBoo
 
             <div className="my-books-groups">{bookGroups.map((group) => <section className={`my-books-group my-books-group-${group.key}`} key={group.key}>
               <h6>{group.label} <span>({group.books.length})</span></h6>
-              {group.key === "lent" && group.books.some((book) => book.pendingRequests?.length) && <small className="my-books-group-note">If you accept one request, the other pending requests for that book will be refused automatically.</small>}
               <div className="my-books-list">{group.books.map((book) => <BookRow book={book} onEdit={() => setActiveBook(book)} key={book.id} />)}</div>
             </section>)}</div>
           </div>
