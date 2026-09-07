@@ -19,22 +19,32 @@ self.addEventListener("fetch", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let payload = {};
-  try { payload = event.data?.json() || {}; } catch { payload = { body: event.data?.text() || "You have a new Maki Books update." }; }
-  const title = payload.title || "Maki Books";
-  const options = {
-    body: payload.body || "You have a new message.",
-    icon: "/images/favicon.png",
-    badge: "/images/maki-notification-badge.png",
-    color: "#000000",
-    data: { conversationId: payload.conversationId || null },
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
-  event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+  event.waitUntil((async () => {
+    let payload = {};
+    try { payload = event.data?.json() || {}; } catch { payload = { body: event.data?.text() || "You have a new Maki Books update." }; }
+    const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    const hasVisibleWindow = windows.some((client) => client.visibilityState === "visible");
+
     // Keep this event name compatible with tabs opened before the rename.
     windows.forEach((client) => client.postMessage({ type: "bookmybook-push", conversationId: payload.conversationId || null }));
-  }));
-  if ("setAppBadge" in self.registration) event.waitUntil(self.registration.setAppBadge(Number(payload.badgeCount) || 1));
+
+    // When Maki Books is already visible, the open page displays the update
+    // itself. Avoid duplicating it as a system notification.
+    if (hasVisibleWindow) return;
+
+    const unreadCount = Number(payload.badgeCount) || 1;
+    const grouped = unreadCount > 1;
+    await self.registration.showNotification(grouped ? "Maki Books" : (payload.title || "Maki Books"), {
+      body: grouped ? `${unreadCount} new messages and updates in Maki Books.` : (payload.body || "You have a new message."),
+      icon: "/images/favicon.png",
+      badge: "/images/maki-notification-badge.png",
+      color: "#000000",
+      tag: "maki-books-messages",
+      renotify: true,
+      data: { conversationId: payload.conversationId || null },
+    });
+    if ("setAppBadge" in self.registration) await self.registration.setAppBadge(unreadCount);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
