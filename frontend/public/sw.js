@@ -25,7 +25,8 @@ self.addEventListener("push", (event) => {
   const options = {
     body: payload.body || "You have a new message.",
     icon: "/images/favicon.png",
-    badge: "/images/favicon.png",
+    badge: "/images/maki-notification-badge.png",
+    color: "#000000",
     data: { conversationId: payload.conversationId || null },
   };
   event.waitUntil(self.registration.showNotification(title, options));
