@@ -73,6 +73,14 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
     openConversation(openConversationId);
     onConversationOpened?.();
   }, [openConversationId]);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("open") !== "discussions") return;
+    setShowMessages(true);
+    params.delete("open");
+    const nextQuery = params.toString();
+    window.history.replaceState({}, "", `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ""}${window.location.hash}`);
+  }, []);
   const closeMessages = () => {
     setShowMessages(false);
     setInitialConversationId(null);

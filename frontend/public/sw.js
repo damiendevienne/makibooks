@@ -49,8 +49,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const conversationId = event.notification.data?.conversationId;
-  const target = conversationId ? `/?conversation=${encodeURIComponent(conversationId)}` : "/";
+  const target = "/?open=discussions";
   event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
     const existing = windows.find((window) => "focus" in window);
     if (existing) {
