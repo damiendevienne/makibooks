@@ -11,6 +11,7 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
   const [showMessages, setShowMessages] = useState(false);
   const [initialConversationId, setInitialConversationId] = useState(null);
   const [myBooksRefreshToken, setMyBooksRefreshToken] = useState(0);
+  const [myBooksCount, setMyBooksCount] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
   const applyUnreadCount = useCallback((count) => setUnreadMessages(Math.max(0, Number(count) || 0)), []);
@@ -44,6 +45,16 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
       navigator.serviceWorker?.removeEventListener("message", handlePush);
     };
   }, [isLoggedIn, user?.id, activeZone]);
+  useEffect(() => {
+    if (!isLoggedIn || !user?.id) {
+      setMyBooksCount(0);
+      return undefined;
+    }
+    api.get(`/api/books?filters[owner][id][$eq]=${user.id}&zone=${encodeURIComponent(activeZone || "heraklion")}`)
+      .then((res) => setMyBooksCount((res.data.data || []).length))
+      .catch(() => {});
+    return undefined;
+  }, [isLoggedIn, user?.id, activeZone, myBooksRefreshToken]);
   useEffect(() => {
     if (isLoggedIn) return;
     setShowMessages(false);
@@ -89,6 +100,10 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
     setMyBooksRefreshToken((value) => value + 1);
     onBookUpdated?.(...args);
   };
+  const handleBookCreated = (...args) => {
+    setMyBooksRefreshToken((value) => value + 1);
+    onBookCreated?.(...args);
+  };
 
   return (
     <>
@@ -130,7 +145,7 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
               onClick={() => setShowMyBooks(true)}
             >
               <BookOpen size={22} color="var(--maki-books-navy)" />
-              <small style={{color:"var(--maki-books-navy)"}}>My Books</small>
+              <small style={{color:"var(--maki-books-navy)"}}>My Books ({myBooksCount})</small>
             </button>
           )}
 
@@ -191,7 +206,7 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
           user={user} // pass the logged-in user object
           activeZone={activeZone}
           activeZoneDocumentId={activeZoneDocumentId}
-          onBookCreated={onBookCreated}
+          onBookCreated={handleBookCreated}
           onBookUpdated={onBookUpdated}
           onOpenConversation={openConversation}
           externalRefreshToken={myBooksRefreshToken}
