@@ -5,20 +5,25 @@ import { languages } from "../../constants/languages";
 const initialForm = { title: "", author: "", summary: "", ownerComment: "", language: "FR", age: "adults", available: true, coverUrl: "", isbn: "", catalogSource: "", catalogId: "" };
 const MAX_IMAGES = 2;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const TARGET_IMAGE_SIZE = 2.5 * 1024 * 1024;
 const MAX_SOURCE_IMAGE_SIZE = 20 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1800;
 
 async function compressImage(file) {
-  if (file.size <= MAX_IMAGE_SIZE) return file;
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  if (scale === 1 && file.size <= TARGET_IMAGE_SIZE) {
+    bitmap.close();
+    return file;
+  }
   const canvas = document.createElement("canvas");
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
   canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.82));
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
   if (!blob || blob.size > MAX_IMAGE_SIZE) throw new Error("IMAGE_TOO_LARGE");
+  if (blob.size >= file.size && file.size <= MAX_IMAGE_SIZE) return file;
   return new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg", lastModified: Date.now() });
 }
 
@@ -52,7 +57,7 @@ export default function AddBookModal({ show, onClose, onCreated, zoneSlug = "her
 
   if (!show) return null;
   const update = (field, value) => setForm((previous) => ({ ...previous, [field]: value }));
-  const closeAndReset = () => { setForm(initialForm); setImages([]); setCatalogQuery(""); setCatalogResults([]); setCatalogBook(null); setManualMode(false); setShowImageChoices(false); setError(""); onClose(); };
+  const closeAndReset = () => { if (saving) return; setForm(initialForm); setImages([]); setCatalogQuery(""); setCatalogResults([]); setCatalogBook(null); setManualMode(false); setShowImageChoices(false); setError(""); onClose(); };
   const selectCatalogBook = (book) => { setForm((previous) => ({ ...previous, title: book.title, author: book.author || "", summary: book.summary || "", ownerComment: "", language: book.language || previous.language, coverUrl: book.coverUrl || "", isbn: book.isbn || "", catalogSource: "openlibrary", catalogId: book.id || "" })); setCatalogBook(book); setCatalogQuery(""); setCatalogResults([]); };
   const submit = async (event) => {
     event.preventDefault(); setError(""); setSaving(true);
@@ -92,7 +97,8 @@ export default function AddBookModal({ show, onClose, onCreated, zoneSlug = "her
   const removeImage = (index) => setImages((current) => current.filter((_, itemIndex) => itemIndex !== index));
   const swapImages = () => setImages((current) => current.length === 2 ? [current[1], current[0]] : current);
   const catalogSelected = !manualMode && !!catalogBook;
-  return <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }} onClick={closeAndReset}><div className="modal-dialog modal-lg" onClick={(event) => event.stopPropagation()}><form className="modal-content book-editor" onSubmit={submit}>
+  return <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }} onClick={(event) => { if (event.target === event.currentTarget) closeAndReset(); }} aria-busy={saving}><div className="modal-dialog modal-lg" onClick={(event) => event.stopPropagation()}><form className="modal-content book-editor" onSubmit={submit}>
+    {saving && <div className="book-saving-overlay" role="status"><span>Saving…</span></div>}
     <div className="modal-header"><h5 className="modal-title">Share a new book</h5><button type="button" className="btn-close" onClick={closeAndReset} aria-label="Close" /></div>
     <div className="modal-body">{error && <div className="alert alert-danger">{error}</div>}
       {!manualMode ? <div className="mb-3"><label className="form-label">Find the book you want to share</label><input className="form-control" value={catalogQuery} onChange={(event) => setCatalogQuery(event.target.value)} placeholder="Search by title, author or ISBN…" autoFocus /><div className="catalog-search-status"><small className="text-muted">{catalogSearching ? "Searching…" : ""}</small></div>{catalogError && <small className="text-danger d-block">{catalogError}</small>}{!catalogSearching && !catalogError && catalogQuery.trim().length >= 2 && catalogResults.length === 0 && <div className="alert alert-light border py-2 mt-2 mb-0">No matching book found in the catalogue. You can add your copy manually.</div>}{catalogResults.length > 0 && <div className="list-group mt-2 catalog-results">{catalogResults.map((book) => <button type="button" className="list-group-item list-group-item-action d-flex align-items-center gap-2 text-start" key={book.id} onClick={() => selectCatalogBook(book)}>{book.coverUrl && <img src={book.coverUrl} alt="" style={{ width: 32, height: 44, objectFit: "cover" }} />}<span><strong>{book.title}</strong><small className="d-block text-muted">{book.author || "Unknown author"}{book.year ? ` · ${book.year}` : ""}</small></span></button>)}</div>}{catalogSelected && <div className="alert alert-success py-2 mt-2 mb-0">Book selected. Bibliographic details and cover are locked.</div>}<button type="button" className="btn btn-link btn-sm px-0 mt-1" onClick={() => { setManualMode(true); setCatalogBook(null); setCatalogQuery(""); setCatalogResults([]); }}>Can’t find your book? Add it manually</button></div> : <div className="mb-3"><button type="button" className="btn btn-link btn-sm px-0" onClick={() => setManualMode(false)}>← Search the online catalogue instead</button></div>}
@@ -121,6 +127,6 @@ export default function AddBookModal({ show, onClose, onCreated, zoneSlug = "her
           <p>{form.available ? "Other members can find this book and send you a borrowing request." : "The book remains in your library, but other members cannot request it."}</p>
         </section>
       </div>}
-    </div><div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={closeAndReset}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving || (!manualMode && !catalogBook)}>{saving ? "Saving…" : "Share this book"}</button></div>
+    </div><div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={closeAndReset} disabled={saving}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving || (!manualMode && !catalogBook)}>{saving ? "Saving…" : "Share this book"}</button></div>
   </form></div></div>;
 }
