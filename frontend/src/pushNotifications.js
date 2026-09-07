@@ -19,7 +19,7 @@ export async function enablePushNotifications() {
   const registration = await navigator.serviceWorker.ready;
   const existing = await registration.pushManager.getSubscription();
   if (existing) {
-    await api.delete("/api/push-subscriptions", { data: { endpoint: existing.endpoint } }).catch(() => {});
+    await api.post("/api/push-subscriptions/unsubscribe", { endpoint: existing.endpoint }).catch(() => {});
     await existing.unsubscribe();
   }
   const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeBase64Url(vapidPublicKey) });
@@ -33,7 +33,7 @@ export async function disablePushNotifications() {
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   if (subscription) {
-    await api.delete("/api/push-subscriptions", { data: { endpoint: subscription.endpoint } });
+    await api.post("/api/push-subscriptions/unsubscribe", { endpoint: subscription.endpoint });
     await subscription.unsubscribe();
   }
   localStorage.removeItem("pushNotificationsEnabled");
