@@ -1686,6 +1686,12 @@ footer .btn small {
   color: #fff;
   background: #c85d55;
 }
+.refusal-confirm-button:active {
+  border-color: #a94b45 !important;
+  color: #fff !important;
+  background: #a94b45 !important;
+  transform: translateY(1px) scale(0.97);
+}
 
 .completion-notice {
   max-width: 34rem;
@@ -1695,6 +1701,24 @@ footer .btn small {
   line-height: 1.45;
   text-align: center;
   white-space: pre-line;
+}
+
+.completion-confirmation-message {
+  padding: 0.65rem 1rem;
+  border-left: 4px solid #2f8f5b;
+  border-radius: 0.55rem;
+  color: #27804e;
+  background: #e4f4e9;
+  box-shadow: 0 1px 3px rgba(39, 128, 78, 0.08);
+  font-weight: 600;
+}
+
+.completion-guidance-message {
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(79, 104, 120, 0.2);
+  color: #526b78;
+  font-size: 0.8rem;
 }
 
 .loan-context-active {

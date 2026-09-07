@@ -433,6 +433,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
                 const refusalArchived = refusedLoan && (refusedLoan.lender?.id === user.id ? active.lenderArchivedAt : active.borrowerArchivedAt);
                 const cancelledLoan = loans.find((loan) => loan.status === "cancelled");
                 const cancellationPendingArchive = cancelledLoan?.lender?.id === user.id && !active.lenderArchivedAt;
+                const [completionConfirmation, completionGuidance] = completionNotice ? content.split("\n\n") : [];
                 const dayKey = message.createdAt ? new Date(message.createdAt).toDateString() : "";
                 const showDay = dayKey && dayKey !== previousDay;
                 previousDay = dayKey || previousDay;
@@ -450,7 +451,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
                           : returnGuidance}
                       </div>
                       {canArrangeReturn && <button type="button" className="btn btn-outline-success btn-sm arrange-return-button" onClick={openReturnComposer}>Arrange the return</button>}
-                    </> : cancelledNotice ? <>{content}{cancellationPendingArchive && <><small className="refusal-archive-hint d-block mt-2">Clicking OK will archive this discussion.</small><button type="button" className="btn btn-sm refusal-confirm-button mt-2" onClick={archiveRefusal}>OK</button></>}</> : loanReminderNotice ? renderLoanReminder(content) : !refusalNotice && content}
+                    </> : completionNotice ? <><div className="completion-confirmation-message">{completionConfirmation}</div>{completionGuidance && <div className="completion-guidance-message">{completionGuidance}</div>}</> : cancelledNotice ? <>{content}{cancellationPendingArchive && <><small className="refusal-archive-hint d-block mt-2">Clicking OK will archive this discussion.</small><button type="button" className="btn btn-sm refusal-confirm-button mt-2" onClick={archiveRefusal}>OK</button></>}</> : loanReminderNotice ? renderLoanReminder(content) : !refusalNotice && content}
                   </div> : <span className={`d-inline-block rounded px-3 py-2 ${message.isSystem ? "bg-light text-muted" : message.sender?.id === user.id ? "message-bubble message-outgoing" : "message-bubble message-incoming"}`}>{content}</span>}
                   {message.createdAt && <small className="message-time">{messageTime(message.createdAt)}</small>}
                   </div>
