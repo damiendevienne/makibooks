@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Heart, BookOpen, LogIn, MessageCircle } from "lucide-react";
 import MyBooksModal from "./mybooks/MyBooksModal";
 import MessagesModal from "./messages/MessagesModal";
@@ -13,7 +13,7 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
   const [myBooksRefreshToken, setMyBooksRefreshToken] = useState(0);
   const [unreadMessages, setUnreadMessages] = useState(0);
 
-  const applyUnreadCount = (count) => setUnreadMessages(Math.max(0, Number(count) || 0));
+  const applyUnreadCount = useCallback((count) => setUnreadMessages(Math.max(0, Number(count) || 0)), []);
 
   useEffect(() => {
     if (!isLoggedIn || !user?.id) {

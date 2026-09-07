@@ -161,6 +161,14 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
       });
       return loadConversations();
     }).catch(() => {});
+    // Keep both sides of an open discussion in sync while they are viewing it.
+    // The app has no websocket connection, so a short poll is the reliable
+    // fallback for new messages and loan status changes.
+    const refreshTimer = window.setInterval(() => {
+      loadMessages();
+      api.post(`/api/conversations/${conversationId}/read`).catch(() => {});
+      loadConversations().catch(() => {});
+    }, 3000);
     const refreshOnReturn = () => {
       if (document.visibilityState === "visible") loadMessages();
     };
@@ -169,6 +177,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
     return () => {
       window.removeEventListener("focus", refreshOnReturn);
       document.removeEventListener("visibilitychange", refreshOnReturn);
+      window.clearInterval(refreshTimer);
     };
   }, [active, loadConversations]);
   useEffect(() => {

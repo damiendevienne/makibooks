@@ -27,7 +27,7 @@ export default factories.createCoreController('api::conversation.conversation', 
       const pendingRequest = (row.loans || []).some((loan) => loan.status === 'requested' && loan.lender?.id === userId);
       const pendingCancellation = (row.loans || []).some((loan) => loan.status === 'cancelled'
         && loan.lender?.id === userId && !row.lenderArchivedAt);
-      return { ...row, unreadCount: Math.max(unreadMessages, pendingRequest ? 1 : 0, pendingCancellation ? 1 : 0) + (pendingRefusal ? 1 : 0) };
+      return { ...row, unreadCount: Math.max(unreadMessages, pendingRequest ? 1 : 0, pendingCancellation ? 1 : 0, pendingRefusal ? 1 : 0) };
     }));
     ctx.body = { data: withUnread.map((row) => ({
       ...row,
@@ -67,9 +67,7 @@ export default factories.createCoreController('api::conversation.conversation', 
     const unread = await strapi.db.query('api::message.message').findMany({
       where: { conversation: conversation.id, readAt: null }, populate: { sender: true },
     });
-    for (const message of unread.filter((item) => item.sender?.id !== userId)) {
-      await strapi.db.query('api::message.message').update({ where: { id: message.id }, data: { readAt: new Date() } });
-    }
+    await Promise.all(unread.filter((item) => item.sender?.id !== userId).map((message) => strapi.db.query('api::message.message').update({ where: { id: message.id }, data: { readAt: new Date() } })));
     ctx.body = { data: { ok: true } };
   },
 
@@ -127,7 +125,8 @@ export default factories.createCoreController('api::conversation.conversation', 
       where: { id: conversation.id }, data: { lastMessageAt: new Date() },
     });
     const recipientId = conversation.participantOne?.id === userId ? conversation.participantTwo?.id : conversation.participantOne?.id;
-    await notifyUsers(strapi, [recipientId], { title: `Message from ${ctx.state.user?.username || 'a reader'}`, body: content, conversationId: conversation.documentId || conversation.id });
+    notifyUsers(strapi, [recipientId], { title: `Message from ${ctx.state.user?.username || 'a reader'}`, body: content, conversationId: conversation.documentId || conversation.id })
+      .catch((error) => strapi.log.warn(`Unable to send conversation push notification: ${error.message}`));
     ctx.body = { data: { ...message, sender: this.publicUser(message.sender) } };
   },
 

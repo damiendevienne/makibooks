@@ -88,7 +88,8 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
       data: { lastMessageAt: new Date() },
     });
     const borrowerName = ctx.state.user?.username || 'A reader';
-    await notifyUsers(strapi, [lenderId], { title: `Message from ${borrowerName}`, body: `New borrowing request for “${book.title}”.`, conversationId: conversation.documentId || conversation.id });
+    notifyUsers(strapi, [lenderId], { title: `Message from ${borrowerName}`, body: `New borrowing request for “${book.title}”.`, conversationId: conversation.documentId || conversation.id })
+      .catch((error) => strapi.log.warn(`Unable to send loan request notification: ${error.message}`));
     ctx.body = { data: { ...loan, conversationId: conversation.documentId ?? conversation.id } };
   },
 
@@ -248,7 +249,10 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
     });
     const recipientId = loan.lender?.id === sender ? loan.borrower?.id : loan.lender?.id;
     const senderName = loan.lender?.id === sender ? loan.lender?.username : loan.borrower?.username;
-    await notifyUsers(strapi, [recipientId], { title: `Message from ${senderName || 'a reader'}`, body: content, conversationId: loan.conversation.documentId || loan.conversation.id });
+    // Push delivery must not hold up the loan action or message response. The
+    // discussion is already persisted and the recipient will see it on refresh.
+    notifyUsers(strapi, [recipientId], { title: `Message from ${senderName || 'a reader'}`, body: content, conversationId: loan.conversation.documentId || loan.conversation.id })
+      .catch((error) => strapi.log.warn(`Unable to send loan push notification: ${error.message}`));
   },
 
   async closeIfLoanCompleted(conversationId) {
