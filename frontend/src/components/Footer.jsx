@@ -189,7 +189,7 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
           externalRefreshToken={myBooksRefreshToken}
         />
       )}
-      <MessagesModal show={showMessages} initialConversationId={initialConversationId} onContextBack={initialConversationId ? closeMessages : undefined} onClose={closeMessages} user={user || {}} activeZone={activeZone} onUnreadCountChange={applyUnreadCount} onBookUpdated={handleLoanUpdated} />
+      <MessagesModal show={showMessages} initialConversationId={initialConversationId} onContextBack={initialConversationId ? () => setInitialConversationId(null) : undefined} onClose={closeMessages} user={user || {}} activeZone={activeZone} onUnreadCountChange={applyUnreadCount} onBookUpdated={handleLoanUpdated} />
     </>
   );
 }

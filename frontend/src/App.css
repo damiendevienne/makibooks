@@ -1063,6 +1063,14 @@ footer .btn small {
   color: var(--maki-books-navy);
   background: #efede7;
 }
+.conversation-subsection-heading:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+.conversation-subsection-heading:disabled:hover {
+  color: #40515d;
+  background: #f7f5f0;
+}
 
 .conversation-subsection-past {
   opacity: 0.68;

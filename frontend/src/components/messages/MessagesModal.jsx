@@ -227,7 +227,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
     { label: "Active loans", tone: "active", groups: activeGroups },
     { label: "Recently completed", tone: "recent", groups: recentGroups },
     { label: "Past loans", tone: "past", groups: pastGroups },
-  ].filter((section) => section.groups.owned.length || section.groups.borrowed.length);
+  ];
 
   const archiveRefusal = async () => {
     if (!active) return;
@@ -358,23 +358,22 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
   return <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,.5)" }} onClick={closeModal}>
     <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
       <div className="modal-content">
-        <div className="modal-header"><div><h5 className="modal-title mb-0">Discussions</h5><small className="text-muted">Borrow, lend and arrange returns</small></div><button className="btn-close" onClick={closeModal} aria-label="Close discussions" /></div>
+        <div className="modal-header"><div><h5 className="modal-title mb-0">Discussions</h5><small className="text-muted">Active, recently completed and past loans — grouped by your books and borrowed books.</small></div><button className="btn-close" onClick={closeModal} aria-label="Close discussions" /></div>
         <div className={`modal-body p-0 ${active ? "messages-modal-body-active" : ""}`}>
           {error && <div className="alert alert-danger m-3">{error}</div>}
           {!active ? <div className="list-group list-group-flush">
-            {conversations.length === 0 && <p className="px-3 pb-3 text-muted text-center mb-0">No discussions yet. When you request to borrow a book or someone requests one of yours, you’ll be able to discuss the exchange, meeting arrangements and returns here.</p>}
             {discussionSections.map((section) => <React.Fragment key={section.tone}>
               <div className={`conversation-section-heading conversation-section-${section.tone} px-3 py-2 text-uppercase small fw-bold`}>
                 {section.tone === "active" ? <BookOpenCheck size={16} aria-hidden="true" /> : section.tone === "recent" ? <Clock3 size={16} aria-hidden="true" /> : <Archive size={16} aria-hidden="true" />}
                 <span>{section.label}</span>
               </div>
-              {[{ label: "My books", ownership: "owned", items: section.groups.owned }, { label: "Borrowed books", ownership: "borrowed", items: section.groups.borrowed }].filter((group) => group.items.length).map((group) => {
+              {[{ label: "My books", ownership: "owned", items: section.groups.owned }, { label: "Borrowed books", ownership: "borrowed", items: section.groups.borrowed }].map((group) => {
                 const groupKey = `${section.tone}-${group.ownership}`;
                 const isCollapsed = Boolean(collapsedDiscussionGroups[groupKey]);
                 return <React.Fragment key={group.ownership}>
-                <button type="button" className={`conversation-subsection-heading conversation-subsection-${section.tone} px-3 py-2 text-uppercase fw-bold`} aria-expanded={!isCollapsed} onClick={() => setCollapsedDiscussionGroups((current) => ({ ...current, [groupKey]: !current[groupKey] }))}>
+                <button type="button" className={`conversation-subsection-heading conversation-subsection-${section.tone} px-3 py-2 text-uppercase fw-bold`} disabled={!group.items.length} aria-expanded={group.items.length ? !isCollapsed : false} onClick={() => setCollapsedDiscussionGroups((current) => ({ ...current, [groupKey]: !current[groupKey] }))}>
                   <span>{group.label} ({group.items.length})</span>
-                  {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                  {group.items.length && !isCollapsed ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </button>
                 {!isCollapsed && group.items.map((conversation) => {
                   const book = conversationBook(conversation);
@@ -395,7 +394,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
           </div> : <div className="conversation-view d-flex flex-column">
             <div className="border-bottom p-2">
               <div className="conversation-header-content">
-                <button className="conversation-back-button" onClick={() => { setActive(null); onContextBack?.(); }} aria-label={onContextBack ? "Back to book details" : "Back to conversations"}><ArrowLeft size={20} /></button>
+                <button className="conversation-back-button" onClick={() => { setActive(null); onContextBack?.(); }} aria-label="Back to conversations"><ArrowLeft size={20} /></button>
                 <img className="conversation-book-thumbnail conversation-header-thumbnail" src={bookImage(conversationBook(active))} alt="" aria-hidden="true" />
                   <div className="conversation-header-info">
                     <strong className="d-block conversation-header-title">{conversationBook(active)?.title || "Conversation"}</strong>
