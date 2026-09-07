@@ -9,9 +9,11 @@
 html,
 body,
 #root {
-  width: 100%;
+  width: 92%;
+  max-width: 34rem;
+  min-height: 70px;
   max-width: 100%;
-  margin: 0;
+  margin: 0 auto 1.65rem;
   overflow-x: hidden;
 }
 
@@ -63,10 +65,77 @@ body,
 }
 
 .add-book-trigger {
-  border-radius: 999px;
-  padding-inline: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(49, 90, 115, 0.2);
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+  position: sticky;
+  top: 0;
+  margin: 0 0 1rem;
+  z-index: 2;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(49, 90, 115, 0.28);
+  border-radius: 0.8rem;
+  background: #c6e3ed;
+  color: var(--maki-books-navy);
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(49, 90, 115, 0.2), 0 0 0 3px rgba(49, 90, 115, 0.08);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.my-books-modal-body {
+  padding-top: 0;
+}
+
+.add-book-trigger:hover,
+.add-book-trigger:focus-visible {
+  border-color: rgba(49, 90, 115, 0.58);
+  background: #b5d9e6;
+  box-shadow: 0 5px 13px rgba(49, 90, 115, 0.2);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.add-book-trigger:active {
+  box-shadow: 0 2px 5px rgba(49, 90, 115, 0.12);
+  transform: translateY(0);
+}
+
+.add-book-trigger-icon {
+  display: grid;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--maki-books-navy);
+}
+
+.add-book-trigger-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+
+.add-book-trigger-copy strong {
+  font-size: 0.97rem;
+  font-weight: 700;
+}
+
+.add-book-trigger-copy small {
+  overflow: hidden;
+  color: rgba(49, 90, 115, 0.78);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.add-book-trigger-arrow {
+  flex: 0 0 auto;
+  color: rgba(49, 90, 115, 0.72);
 }
 
 .my-books-groups {

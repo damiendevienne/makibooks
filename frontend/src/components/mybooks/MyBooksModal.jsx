@@ -3,6 +3,7 @@ import BookRow from "./BookRow";
 import BookActionsModal from "./BookActionsModal";
 import AddBookModal from "./AddBookModal";
 import api from "../../api";
+import { BookOpen, ChevronRight } from "lucide-react";
 
 export default function MyBooksModal({ show, onClose, user, onBookCreated, onBookUpdated, onOpenConversation, externalRefreshToken = 0, activeZone, activeZoneDocumentId }) {
   const [books, setBooks] = useState([]);
@@ -78,7 +79,7 @@ export default function MyBooksModal({ show, onClose, user, onBookCreated, onBoo
       onClick={onClose}
     >
       <div
-        className="modal-dialog modal-lg"
+        className="modal-dialog modal-lg modal-dialog-scrollable"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-content">
@@ -91,14 +92,19 @@ export default function MyBooksModal({ show, onClose, user, onBookCreated, onBoo
             ></button>
           </div>
 
-          <div className="modal-body">
-            <div className="text-center mb-3"><button type="button" className="btn btn-primary add-book-trigger" onClick={() => setShowAddBook(true)}>＋ Share a book</button></div>
+          <div className="modal-body my-books-modal-body">
+            <button type="button" className="add-book-trigger" onClick={() => setShowAddBook(true)}>
+              <span className="add-book-trigger-icon" aria-hidden="true"><BookOpen size={23} strokeWidth={1.9} /></span>
+              <span className="add-book-trigger-copy"><strong>Share a book</strong><small>For someone to discover!</small></span>
+              <ChevronRight className="add-book-trigger-arrow" size={21} aria-hidden="true" />
+            </button>
             {books.length === 0 && <p className="text-muted text-center mb-3">You have no books here yet. Add books from your shelf so other members can borrow them, and keep track of their lending status.</p>}
 
             <div className="my-books-groups">{bookGroups.map((group) => <section className={`my-books-group my-books-group-${group.key}`} key={group.key}>
               <h6>{group.label} <span>({group.books.length})</span></h6>
               <div className="my-books-list">{group.books.map((book) => <BookRow book={book} onEdit={() => setActiveBook(book)} key={book.id} />)}</div>
-            </section>)}</div>
+              </section>)}
+          </div>
           </div>
         </div>
       </div>
