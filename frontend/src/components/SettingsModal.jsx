@@ -124,9 +124,9 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             </div>
             }
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
-              <div className="settings-notification-toggle">
-                <div className="settings-notification-label"><Bell size={17} aria-hidden="true" /><span>Allow notifications</span></div>
-                <button type="button" className={`notification-switch${notificationsEnabled ? " is-on" : ""}`} role="switch" aria-checked={notificationsEnabled} aria-label="Allow notifications" onClick={toggleNotifications}><span aria-hidden="true" /></button>
+              <div className="availability-toggle-row settings-notification-toggle">
+                <strong><Bell size={17} aria-hidden="true" /> Allow notifications</strong>
+                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} id="settings-notifications" aria-label="Allow notifications" /></div>
               </div>
               <p className="text-muted small mb-2">Get a notification when you receive a new message, even when Maki Books is closed.</p>
               {notificationStatus && <div className="text-muted small mt-2" role="status">{notificationStatus}</div>}

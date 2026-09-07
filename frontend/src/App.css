@@ -780,6 +780,11 @@ footer .btn small {
 .availability-toggle-row strong {
   color: var(--maki-books-navy);
 }
+.settings-notification-toggle strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
 
 .book-editor-sharing .form-switch {
   flex: 0 0 auto;
@@ -1944,48 +1949,6 @@ footer .btn small {
   color: var(--maki-books-navy);
 }
 .settings-account { padding-top: 0.1rem; }
-.settings-notification-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.45rem;
-}
-.settings-notification-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--maki-books-navy);
-  font-weight: 600;
-}
-.notification-switch {
-  position: relative;
-  flex: 0 0 auto;
-  width: 2.75rem;
-  height: 1.55rem;
-  padding: 0.15rem;
-  border: 0;
-  border-radius: 999px;
-  background: #c7d0d5;
-  cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-.notification-switch span {
-  display: block;
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 3px rgba(24, 50, 74, 0.28);
-  transform: translateX(0);
-  transition: transform 0.2s ease;
-}
-.notification-switch.is-on {
-  background: var(--maki-books-teal, #2f7f83);
-  box-shadow: 0 0 0 2px rgba(47, 127, 131, 0.16);
-}
-.notification-switch.is-on span { transform: translateX(1.2rem); }
-.notification-switch:focus-visible { outline: 3px solid rgba(47, 127, 131, 0.32); outline-offset: 2px; }
 .settings-extra { margin-top: 1rem; padding: 0.75rem; border-radius: 0.5rem; background: rgba(127, 147, 111, 0.1); }
 .theme-dark { background: #1f2933 !important; color: #e8edf1; }
 .theme-dark .site-header,
