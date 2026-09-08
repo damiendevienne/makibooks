@@ -7,7 +7,7 @@ const languageFlags = {
   PT: "🇵🇹", NL: "🇳🇱", AR: "🇸🇦", RU: "🇷🇺", ZH: "🇨🇳", JA: "🇯🇵",
 };
 
-function FilterMenu({ label, value, options, onChange, renderOption = (option) => option.label }) {
+export function FilterMenu({ label, value, options, onChange, renderOption = (option) => option.label }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
   const selected = options.find((option) => option.value === value) || options[0];
@@ -47,6 +47,7 @@ function FilterMenu({ label, value, options, onChange, renderOption = (option) =
               type="button"
               role="option"
               aria-selected={option.value === value}
+              disabled={option.disabled}
               className={`filter-menu-option ${option.value === value ? "is-selected" : ""}`}
               key={option.value}
               onClick={() => { onChange(option.value); setOpen(false); }}

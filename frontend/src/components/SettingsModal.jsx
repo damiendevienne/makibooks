@@ -3,6 +3,7 @@ import { Bell, Globe2, LogOut, Mail, Pencil, UserRound } from "lucide-react";
 import api from "../api";
 import packageJson from "../../package.json";
 import { disablePushNotifications, enablePushNotifications, pushNotificationsAvailable } from "../pushNotifications";
+import { FilterMenu } from "./FilterPanel";
 
 export default function SettingsModal({ show, onClose, isLoggedIn, user, onLoginToggle, activeZone, zones = [], onZoneChange }) {
   const [language, setLanguage] = useState(() => localStorage.getItem("preferredLanguage") || "en");
@@ -30,6 +31,16 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
     setLanguage(nextLanguage);
     localStorage.setItem("preferredLanguage", nextLanguage);
   };
+  const zoneOptions = zones.map((zone) => ({
+    value: zone.slug,
+    label: `${zone.countryCode === "FR" ? "🇫🇷" : zone.countryCode === "GR" ? "🇬🇷" : "🌍"} ${zone.name}${zone.enabled === false ? " · Coming soon" : ""}`,
+    disabled: zone.enabled === false,
+  }));
+  const languageOptions = [
+    { value: "en", label: "English" },
+    { value: "fr", label: "Français · Coming soon", disabled: true },
+    { value: "el", label: "Ελληνικά · Coming soon", disabled: true },
+  ];
   const updateProfile = async (event) => {
     event.preventDefault();
     if (profileSaving) return;
@@ -105,19 +116,13 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             </div>
             <div className="settings-field">
               <label htmlFor="settings-zone">📍 Sharing area</label>
-              <select id="settings-zone" className="form-select settings-select" value={activeZone || ""} onChange={(event) => onZoneChange?.(event.target.value)}>
-                {zones.map((zone) => <option value={zone.slug} key={zone.slug} disabled={zone.enabled === false}>{zone.countryCode === "FR" ? "🇫🇷" : zone.countryCode === "GR" ? "🇬🇷" : "🌍"} {zone.name}{zone.enabled === false ? " · Coming soon" : ""}</option>)}
-              </select>
+              <FilterMenu label="Sharing area" value={activeZone || ""} options={zoneOptions} onChange={(value) => onZoneChange?.(value)} />
               <small className="text-muted">Only books listed in this area are shown.</small>
             </div>
 
             <div className="settings-field">
               <label htmlFor="settings-language"><Globe2 size={17} /> Interface language</label>
-              <select id="settings-language" className="form-select settings-select" value={language} onChange={updateLanguage}>
-                <option value="en">English</option>
-                <option value="fr" disabled>Français · Coming soon</option>
-                <option value="el" disabled>Ελληνικά · Coming soon</option>
-              </select>
+              <FilterMenu label="Interface language" value={language} options={languageOptions} onChange={(value) => updateLanguage({ target: { value } })} />
               <small className="text-muted">Your preference is saved for this device.</small>
             </div>
 

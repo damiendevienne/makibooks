@@ -2063,19 +2063,6 @@ footer .btn small {
 }
 
 .settings-field { margin-bottom: 1.15rem; }
-.settings-select {
-  min-height: 42px;
-  border: 1px solid rgba(49, 90, 115, 0.24);
-  border-radius: 0.6rem;
-  background-color: #fffdf8;
-  color: var(--maki-books-navy, #315a73);
-  font-size: 0.94rem;
-  box-shadow: none;
-}
-.settings-select:focus {
-  border-color: var(--maki-books-blue, #6f9caf);
-  box-shadow: 0 0 0 3px rgba(111, 156, 175, 0.14);
-}
 .settings-modal-content { position: relative; }
 .notification-loading-overlay {
   position: absolute;
