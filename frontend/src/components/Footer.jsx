@@ -51,7 +51,7 @@ export default function Footer({ isLoggedIn, user = {}, onLoginToggle, onBookCre
       return undefined;
     }
     api.get(`/api/books?filters[owner][id][$eq]=${user.id}&zone=${encodeURIComponent(activeZone || "heraklion")}`)
-      .then((res) => setMyBooksCount((res.data.data || []).length))
+      .then((res) => setMyBooksCount(Number(res.data.meta?.pagination?.total ?? (res.data.data || []).length)))
       .catch(() => {});
     return undefined;
   }, [isLoggedIn, user?.id, activeZone, myBooksRefreshToken]);

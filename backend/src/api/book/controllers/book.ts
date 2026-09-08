@@ -85,17 +85,42 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
       const zone = await strapi.db.query('api::zone.zone').findOne({ where: { slug: zoneSlug }, select: ['id', 'name', 'slug'] });
       if (!zone) return ctx.notFound('Sharing area not found.');
       const ownerId = ctx.query.filters?.owner?.id?.$eq;
-      const where = { zone: zone.id, $or: [{ archived: false }, { archived: { $null: true } }], publishedAt: { $notNull: true }, ...(ownerId ? { owner: Number(ownerId) } : {}) };
+      const ownerUsername = String(ctx.query.owner || '').trim();
+      const owners = ownerUsername
+        ? await strapi.db.query('plugin::users-permissions.user').findMany({ where: { username: { $containsi: ownerUsername } }, select: ['id'] })
+        : [];
+      const requestedPage = Number(ctx.query.page || 1);
+      const requestedPageSize = Number(ctx.query.pageSize || 24);
+      const page = Number.isFinite(requestedPage) ? Math.max(1, Math.floor(requestedPage)) : 1;
+      const pageSize = Number.isFinite(requestedPageSize) ? Math.min(100, Math.max(1, Math.floor(requestedPageSize))) : 24;
+      const search = String(ctx.query.search || '').trim();
+      const favoriteIds = String(ctx.query.favoriteIds || '').split(',').map((id) => id.trim()).filter(Boolean);
+      const where = {
+        zone: zone.id,
+        $or: [{ archived: false }, { archived: { $null: true } }],
+        publishedAt: { $notNull: true },
+        ...((ownerId || owners.length) ? { owner: ownerId ? Number(ownerId) : { $in: owners.map((item) => item.id) } } : ownerUsername ? { owner: -1 } : {}),
+        ...(search ? { $and: [{ $or: [{ title: { $containsi: search } }, { author: { $containsi: search } }] }] } : {}),
+        ...(ctx.query.age ? { age: String(ctx.query.age) } : {}),
+        ...(ctx.query.language ? { language: String(ctx.query.language) } : {}),
+        ...(ctx.query.available === 'true' ? { available: true } : ctx.query.available === 'false' ? { available: false } : {}),
+        ...(ctx.query.favoriteIds ? { documentId: favoriteIds.length ? { $in: favoriteIds } : '__no_favorites__' } : {}),
+      };
+      const sort = String(ctx.query.sort || 'newest');
+      const orderBy = sort === 'title-asc' ? { title: 'asc' } : sort === 'title-desc' ? { title: 'desc' } : sort === 'author-asc' ? { author: 'asc' } : { createdAt: 'desc' };
+      const total = await strapi.db.query('api::book.book').count({ where });
       const books = await strapi.db.query('api::book.book').findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
         populate: { owner: true, image: true, zone: true, loans: { populate: { borrower: true, conversation: true } } },
       });
       const data = (await markBooksWithActiveLoans(strapi, books)).map((book) => ({
         ...publicBook(book),
         hasLoanHistory: (book.loans || []).some((loan) => loan.status === 'active' || loan.status === 'returned'),
       }));
-      return { data, meta: { pagination: { page: 1, pageSize: data.length, pageCount: data.length ? 1 : 0, total: data.length } } };
+      return { data, meta: { pagination: { page, pageSize, pageCount: Math.ceil(total / pageSize), total } } };
     }
     const response = await super.find(ctx);
     if (Array.isArray(response.data)) {

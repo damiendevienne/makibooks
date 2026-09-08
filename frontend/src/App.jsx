@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { HeartCrack } from "lucide-react";
 import api from "./api";
 import Header from "./components/Header";
@@ -54,6 +54,11 @@ function App() {
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [cataloguePage, setCataloguePage] = useState(1);
+  const [catalogueTotal, setCatalogueTotal] = useState(0);
+  const [catalogueHasMore, setCatalogueHasMore] = useState(false);
+  const [catalogueLoadingMore, setCatalogueLoadingMore] = useState(false);
+  const catalogueSentinelRef = useRef(null);
 
   useEffect(() => {
     if (isLoggedIn) setShowLogin(false);
@@ -187,7 +192,16 @@ function App() {
     }
   };
 
-  const catalogueUrl = `/api/books?populate=*&zone=${encodeURIComponent(activeZone)}`;
+  const catalogueQuery = new URLSearchParams({ populate: "*", zone: activeZone });
+  if (searchTerm.trim()) catalogueQuery.set("search", searchTerm.trim());
+  if (filters.age) catalogueQuery.set("age", filters.age);
+  if (filters.language) catalogueQuery.set("language", filters.language);
+  if (filters.available) catalogueQuery.set("available", filters.available === "yes" ? "true" : "false");
+  if (filters.owner) catalogueQuery.set("owner", filters.owner);
+  if (favoritesOnly) catalogueQuery.set("favoriteIds", favoriteBookIds.join(","));
+  catalogueQuery.set("sort", sortOrder);
+  const catalogueUrl = `/api/books?${catalogueQuery.toString()}`;
+  const cataloguePageSize = 24;
 
   const handleZoneChange = (slug) => {
     if (!slug) return;
@@ -210,22 +224,38 @@ function App() {
       .catch(() => setZones([{ name: "Heraklion", slug: "heraklion" }]));
   }, [activeZone]);
 
-  const applyCatalogueBooks = (entries) => {
+  const applyCatalogueBooks = (entries, append = false) => {
     const nextBooks = entries.map(normalizeBookAvailability);
-    setBooks(nextBooks);
-    if (isLoggedIn) {
-      const visibleIds = new Set(nextBooks.map((entry) => {
-        const book = entry.attributes || entry;
-        return String(book.documentId || book.id || "");
-      }));
-      setFavoriteBookIds((current) => current.filter((id) => visibleIds.has(String(id))));
+    setBooks((current) => append ? [...current, ...nextBooks] : nextBooks);
+  };
+
+  const refreshCatalogue = async () => {
+    const response = await api.get(`${catalogueUrl}&page=1&pageSize=${cataloguePageSize}`);
+    applyCatalogueBooks(response.data.data || []);
+    const pagination = response.data.meta?.pagination;
+    setCatalogueTotal(Number(pagination?.total || 0));
+    setCataloguePage(1);
+    setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
+  };
+
+  const loadMoreCatalogue = async () => {
+    if (catalogueLoadingMore || !catalogueHasMore) return;
+    setCatalogueLoadingMore(true);
+    try {
+      const nextPage = cataloguePage + 1;
+      const response = await api.get(`${catalogueUrl}&page=${nextPage}&pageSize=${cataloguePageSize}`);
+      applyCatalogueBooks(response.data.data || [], true);
+      const pagination = response.data.meta?.pagination;
+      setCatalogueTotal(Number(pagination?.total || 0));
+      setCataloguePage(nextPage);
+      setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
+    } finally {
+      setCatalogueLoadingMore(false);
     }
   };
 
   const handleBookCreated = () => {
-    api
-      .get(catalogueUrl)
-      .then((res) => applyCatalogueBooks(res.data.data))
+    refreshCatalogue()
       .catch((err) => console.error("Unable to refresh the book catalogue:", err));
   };
 
@@ -239,21 +269,23 @@ function App() {
           : { ...entry, available: nextAvailable };
       }));
     }
-    api
-      .get(catalogueUrl)
-      .then((res) => applyCatalogueBooks(res.data.data))
+    refreshCatalogue()
       .catch((err) => console.error("Unable to refresh the book catalogue:", err));
   };
 
 
   useEffect(() => {
     let cancelled = false;
-    const refreshCatalogue = () => {
+    const refresh = () => {
       api
-        .get(catalogueUrl)
+        .get(`${catalogueUrl}&page=1&pageSize=${cataloguePageSize}`)
         .then((res) => {
           if (!cancelled) {
-            applyCatalogueBooks(res.data.data);
+            applyCatalogueBooks(res.data.data || []);
+            const pagination = res.data.meta?.pagination;
+            setCatalogueTotal(Number(pagination?.total || 0));
+            setCataloguePage(1);
+            setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
             setCatalogueState("ready");
           }
         })
@@ -266,23 +298,34 @@ function App() {
     };
 
     const handleOffline = () => { if (!cancelled) setCatalogueState("offline"); };
-    const handleOnline = () => { if (!cancelled) refreshCatalogue(); };
+    const handleOnline = () => { if (!cancelled) refresh(); };
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
-    refreshCatalogue();
+    const initialRefreshTimer = window.setTimeout(refresh, 250);
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") refreshCatalogue();
+      if (document.visibilityState === "visible") refresh();
     };
-    window.addEventListener("focus", refreshCatalogue);
+    window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       cancelled = true;
+      window.clearTimeout(initialRefreshTimer);
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
-      window.removeEventListener("focus", refreshCatalogue);
+      window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [catalogueUrl]);
+
+  useEffect(() => {
+    const sentinel = catalogueSentinelRef.current;
+    if (!sentinel || !catalogueHasMore) return undefined;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) loadMoreCatalogue();
+    }, { rootMargin: "240px" });
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [catalogueHasMore, cataloguePage, catalogueLoadingMore]);
 
 
   // Compute counts only when books change
@@ -385,7 +428,7 @@ function App() {
             </button>
           </div>
           <div className="library-summary" aria-live="polite">
-            <span><strong>{catalogueIsFiltered ? `${sortedBooks.length}/${libraryStats.total}` : libraryStats.total}</strong> {catalogueIsFiltered ? "shown" : libraryStats.total === 1 ? "book" : "books"}</span>
+            <span><strong>{catalogueIsFiltered ? `${sortedBooks.length}/${catalogueTotal}` : catalogueTotal}</strong> {catalogueIsFiltered ? "shown" : catalogueTotal === 1 ? "book" : "books"}</span>
             <span><strong>{libraryStats.available}</strong> available</span>
             <span><strong>{libraryStats.onLoan}</strong> on loan</span>
           </div>
@@ -444,6 +487,10 @@ function App() {
             }}
           />
           ))}
+        </div>
+        <div ref={catalogueSentinelRef} className="catalogue-load-more text-center py-3" aria-live="polite">
+          {catalogueLoadingMore && <small className="text-muted">Loading more books…</small>}
+          {!catalogueLoadingMore && catalogueHasMore && <small className="text-muted">Scroll to discover more books…</small>}
         </div>
       </div>
       <SiteFooter canInstallApp={Boolean(installPromptEvent)} onInstallApp={installApp} />

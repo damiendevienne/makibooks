@@ -15,7 +15,7 @@ export default function MyBooksModal({ show, onClose, user, onBookCreated, onBoo
     if (show) {
       api
         .get(
-          `/api/books?filters[owner][id][$eq]=${user.id}&zone=${encodeURIComponent(activeZone || "heraklion")}&populate[0]=image&populate[1]=loans&populate[2]=loans.borrower`
+          `/api/books?filters[owner][id][$eq]=${user.id}&zone=${encodeURIComponent(activeZone || "heraklion")}&page=1&pageSize=100&populate[0]=image&populate[1]=loans&populate[2]=loans.borrower`
         )
         .then((res) => {
           const booksData = res.data.data.map((item) => {
