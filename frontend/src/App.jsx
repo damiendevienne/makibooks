@@ -106,7 +106,8 @@ function App() {
   const installApp = async () => {
     if (!installPromptEvent) return dismissInstallPrompt();
     await installPromptEvent.prompt();
-    localStorage.setItem("makiAppInstalled", "true");
+    const choice = await installPromptEvent.userChoice;
+    if (choice?.outcome === "accepted") localStorage.setItem("makiAppInstalled", "true");
     setInstallPromptEvent(null);
     setShowInstallPrompt(false);
   };
