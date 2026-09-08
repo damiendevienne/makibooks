@@ -9,11 +9,9 @@
 html,
 body,
 #root {
-  width: 92%;
-  max-width: 34rem;
-  min-height: 70px;
+  width: 100%;
   max-width: 100%;
-  margin: 0 auto 1.65rem;
+  margin: 0;
   overflow-x: hidden;
 }
 
