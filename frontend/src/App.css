@@ -675,6 +675,63 @@ body,
   line-height: 1.25rem;
 }
 
+.manual-book-choice {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.7rem;
+  margin-top: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(49, 90, 115, 0.22);
+  border-radius: 0.7rem;
+  background: #f4fafc;
+  color: var(--maki-books-navy);
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.manual-book-choice:hover,
+.manual-book-choice:focus-visible {
+  border-color: rgba(49, 90, 115, 0.5);
+  background: #e8f5f9;
+  box-shadow: 0 3px 9px rgba(49, 90, 115, 0.12);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.manual-book-choice:active {
+  box-shadow: 0 1px 4px rgba(49, 90, 115, 0.1);
+  transform: translateY(0);
+}
+
+.manual-book-choice-icon {
+  display: grid;
+  flex: 0 0 2.25rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 0.6rem;
+  background: #c6e3ed;
+  color: var(--maki-books-navy);
+}
+
+.manual-book-choice > span:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.manual-book-choice strong {
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.manual-book-choice small {
+  color: rgba(49, 90, 115, 0.78);
+  font-size: 0.78rem;
+}
+
 .book-editor {
   position: relative;
 }

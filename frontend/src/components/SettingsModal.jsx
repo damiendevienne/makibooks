@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Bell, Globe2, LogOut, Mail, Pencil, UserRound } from "lucide-react";
 import api from "../api";
 import packageJson from "../../package.json";
-import { disablePushNotifications, enablePushNotifications, pushNotificationsAvailable } from "../pushNotifications";
+import { disablePushNotifications, enablePushNotifications, getNotificationPermission, pushNotificationsAvailable } from "../pushNotifications";
 import { FilterMenu } from "./FilterPanel";
 
 export default function SettingsModal({ show, onClose, isLoggedIn, user, onLoginToggle, activeZone, zones = [], onZoneChange }) {
@@ -19,10 +19,26 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem("pushNotificationsEnabled") === "true");
   const [notificationStatus, setNotificationStatus] = useState("");
   const [notificationsUpdating, setNotificationsUpdating] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState(() => pushNotificationsAvailable() ? getNotificationPermission() : "denied");
 
   useEffect(() => {
     setProfile({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!show || !pushNotificationsAvailable()) return undefined;
+    const refreshNotificationPermission = () => {
+      setNotificationPermission(getNotificationPermission());
+      if (getNotificationPermission() === "granted") setNotificationStatus("");
+    };
+    refreshNotificationPermission();
+    window.addEventListener("focus", refreshNotificationPermission);
+    document.addEventListener("visibilitychange", refreshNotificationPermission);
+    return () => {
+      window.removeEventListener("focus", refreshNotificationPermission);
+      document.removeEventListener("visibilitychange", refreshNotificationPermission);
+    };
+  }, [show]);
 
   if (!show) return null;
 
@@ -137,9 +153,10 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
               <div className="availability-toggle-row settings-notification-toggle">
                 <strong><Bell size={17} aria-hidden="true" /> Allow notifications</strong>
-                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} disabled={notificationsUpdating} id="settings-notifications" aria-label="Allow notifications" /></div>
+                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} disabled={notificationsUpdating || notificationPermission === "denied"} id="settings-notifications" aria-label="Allow notifications" /></div>
               </div>
               <p className="text-muted small mb-2">Get a notification when you receive a new message, even when Maki Books is closed.</p>
+              {notificationPermission === "denied" && <div className="text-muted small mt-2" role="status">You previously chose not to allow notifications. Your browser or phone has remembered that choice, so Maki Books cannot ask again from here. Allow notifications in the Maki Books site or app settings, then return here to switch them on.</div>}
               {notificationStatus && <div className="text-muted small mt-2" role="status">{notificationStatus}</div>}
             </div>}
           </div>

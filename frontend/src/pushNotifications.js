@@ -12,10 +12,17 @@ export const pushNotificationsAvailable = () => Boolean(
   vapidPublicKey && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window,
 );
 
+export const getNotificationPermission = () => (
+  "Notification" in window ? Notification.permission : "denied"
+);
+
 export async function enablePushNotifications() {
   if (!pushNotificationsAvailable()) throw new Error("Push notifications are not configured for this site.");
+  if (Notification.permission === "denied") {
+    throw new Error("Notifications are blocked for Maki Books. Allow them in your browser or phone settings, then try again.");
+  }
   const permission = await Notification.requestPermission();
-  if (permission !== "granted") throw new Error("Notifications were not enabled.");
+  if (permission !== "granted") throw new Error("Notifications were not enabled. You can allow them later in your browser or phone settings.");
   const registration = await navigator.serviceWorker.ready;
   const existing = await registration.pushManager.getSubscription();
   if (existing) {
