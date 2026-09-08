@@ -105,7 +105,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
     <div className="modal fade show settings-modal" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered modal-sm" onClick={(event) => event.stopPropagation()}>
         <div className="modal-content settings-modal-content">
-          {notificationsUpdating && <div className="notification-loading-overlay" role="status" aria-live="polite"><div className="spinner-border text-primary" aria-hidden="true" /><span>Updating notifications…</span></div>}
+          {notificationsUpdating && <div className="notification-loading-overlay" role="status" aria-live="polite"><span>Updating notifications…</span></div>}
           <div className="modal-header">
             <h5 className="modal-title">Settings</h5>
             <button type="button" className="btn-close" onClick={onClose} aria-label="Close settings" />
