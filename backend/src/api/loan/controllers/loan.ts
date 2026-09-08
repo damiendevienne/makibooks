@@ -3,6 +3,7 @@
 // @ts-nocheck
 import { factories } from '@strapi/strapi';
 import { notifyUsers } from '../../../services/push';
+import { canTransition } from '../../../services/loanState';
 
 const activeOrRequested = ['requested', 'active'];
 
@@ -97,7 +98,7 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
     const loan = await this.findLoanForParticipant(ctx);
     if (!loan) return;
     if (loan.lender.id !== ctx.state.user.id) return ctx.forbidden();
-    if (loan.status !== 'requested') return ctx.badRequest('Only pending requests can be accepted.');
+    if (!canTransition(loan.status, 'active')) return ctx.badRequest('Only pending requests can be accepted.');
     const updated = await strapi.db.query('api::loan.loan').update({ where: { id: loan.id }, data: { status: 'active' } });
     const competingRequests = await strapi.db.query('api::loan.loan').findMany({
       where: { book: loan.book.id, status: 'requested', id: { $ne: loan.id } },
@@ -117,7 +118,7 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
     const loan = await this.findLoanForParticipant(ctx);
     if (!loan) return;
     if (loan.lender.id !== ctx.state.user.id) return ctx.forbidden();
-    if (loan.status !== 'requested') return ctx.badRequest('Only pending requests can be refused.');
+    if (!canTransition(loan.status, 'refused')) return ctx.badRequest('Only pending requests can be refused.');
 
     const updated = await strapi.db.query('api::loan.loan').update({
       where: { id: loan.id },
@@ -132,7 +133,7 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
     const loan = await this.findLoanForParticipant(ctx);
     if (!loan) return;
     if (loan.borrower.id !== ctx.state.user.id) return ctx.forbidden();
-    if (loan.status !== 'requested' && loan.status !== 'active') return ctx.badRequest('This loan can no longer be cancelled.');
+    if (!canTransition(loan.status, 'cancelled')) return ctx.badRequest('This loan can no longer be cancelled.');
     if (loan.status === 'active' && loan.borrowerReceivedAt) {
       return ctx.badRequest('This loan has already been received. Please arrange its return instead.');
     }
@@ -187,7 +188,7 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
     const loan = await this.findLoanForParticipant(ctx);
     if (!loan) return;
     if (loan.lender.id !== ctx.state.user.id) return ctx.forbidden();
-    if (loan.status !== 'active' || !loan.borrowerReceivedAt) return ctx.badRequest('Wait until the borrower has confirmed receiving the book.');
+    if (!canTransition(loan.status, 'returned') || !loan.borrowerReceivedAt) return ctx.badRequest('Wait until the borrower has confirmed receiving the book.');
 
     const updated = await strapi.db.query('api::loan.loan').update({
       where: { id: loan.id }, data: { lenderReceivedBackAt: new Date(), status: 'returned' },
@@ -224,7 +225,7 @@ export default factories.createCoreController('api::loan.loan', ({ strapi }) => 
     });
     if (loan.borrowerReceivedAt && loan.lenderLentAt) {
       await strapi.db.query('api::book.book').update({ where: { id: loan.book.id }, data: { available: false } });
-      return strapi.db.query('api::loan.loan').update({ where: { id: loan.id }, data: { status: 'active' } });
+      if (canTransition(loan.status, 'active')) return strapi.db.query('api::loan.loan').update({ where: { id: loan.id }, data: { status: 'active' } });
     }
     return loan;
   },
