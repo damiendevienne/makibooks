@@ -77,13 +77,12 @@ function App() {
 
   useEffect(() => {
     const standalone = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone;
-    const previouslyInstalled = localStorage.getItem("makiAppInstalled") === "true";
     const dismissedAt = Number(localStorage.getItem("installPromptDismissedAt") || 0);
     const recentlyDismissed = dismissedAt && Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000;
     const handleInstallable = (event) => {
       event.preventDefault();
       setInstallPromptEvent(event);
-      if (!standalone && !previouslyInstalled && !recentlyDismissed) setShowInstallPrompt(true);
+      if (!standalone && !recentlyDismissed) setShowInstallPrompt(true);
     };
     const handleInstalled = () => {
       localStorage.setItem("makiAppInstalled", "true");
@@ -106,8 +105,6 @@ function App() {
   const installApp = async () => {
     if (!installPromptEvent) return dismissInstallPrompt();
     await installPromptEvent.prompt();
-    const choice = await installPromptEvent.userChoice;
-    if (choice?.outcome === "accepted") localStorage.setItem("makiAppInstalled", "true");
     setInstallPromptEvent(null);
     setShowInstallPrompt(false);
   };
