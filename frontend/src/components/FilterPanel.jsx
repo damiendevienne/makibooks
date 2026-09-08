@@ -78,7 +78,7 @@ export default function FilterPanel({ filters, setFilters, matchingCount, onAppl
       aria-labelledby="filterCanvasLabel"
       style={{ width: "250px" }}
     >
-      <div className="offcanvas-header">
+      <div className="offcanvas-header filter-offcanvas-header">
         <h5 id="filterCanvasLabel">Filter books</h5>
         <button
           type="button"

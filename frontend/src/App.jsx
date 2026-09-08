@@ -53,6 +53,7 @@ function App() {
   );
   const [installPromptEvent, setInstallPromptEvent] = useState(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) setShowLogin(false);
@@ -91,6 +92,23 @@ function App() {
     await installPromptEvent.prompt();
     setInstallPromptEvent(null);
     setShowInstallPrompt(false);
+  };
+
+  useEffect(() => {
+    const standalone = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone;
+    const dismissedAt = Number(localStorage.getItem("notificationPromptDismissedAt") || 0);
+    const recentlyDismissed = dismissedAt && Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000;
+    setShowNotificationPrompt(Boolean(isLoggedIn && standalone && !localStorage.getItem("pushNotificationsEnabled") && !recentlyDismissed));
+  }, [isLoggedIn]);
+
+  const dismissNotificationPrompt = () => {
+    localStorage.setItem("notificationPromptDismissedAt", String(Date.now()));
+    setShowNotificationPrompt(false);
+  };
+
+  const openNotificationSettings = () => {
+    setShowNotificationPrompt(false);
+    window.dispatchEvent(new Event("maki-open-settings"));
   };
 
   useEffect(() => {
@@ -366,7 +384,7 @@ function App() {
 
       {catalogueState !== "ready" && (
         <div className="container pt-3">
-          <div className={`alert ${catalogueState === "offline" ? "alert-warning" : "alert-danger"} d-flex align-items-center justify-content-between gap-3`} role="alert">
+          <div className={`alert ${catalogueState === "offline" ? "alert-warning" : catalogueState === "loading" ? "alert-info" : "alert-danger"} d-flex align-items-center justify-content-between gap-3`} role="alert">
             <span>
               {catalogueState === "offline"
                 ? "You appear to be offline. The book catalogue cannot be loaded right now."
@@ -378,6 +396,11 @@ function App() {
           </div>
         </div>
       )}
+
+      {showNotificationPrompt && <div className="install-app-prompt notification-app-prompt" role="status">
+        <div><strong>Enable Maki Books notifications</strong><small>You can turn them on anytime to hear about new messages.</small></div>
+        <div className="install-app-prompt-actions"><button type="button" className="btn btn-primary btn-sm" onClick={openNotificationSettings}>Settings</button><button type="button" className="btn btn-link btn-sm" onClick={dismissNotificationPrompt}>Not now</button></div>
+      </div>}
 
       <div className="container pt-3 pb-4">
         <div className="library-sort-row">

@@ -17,6 +17,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
   const [editingField, setEditingField] = useState(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => localStorage.getItem("pushNotificationsEnabled") === "true");
   const [notificationStatus, setNotificationStatus] = useState("");
+  const [notificationsUpdating, setNotificationsUpdating] = useState(false);
 
   useEffect(() => {
     setProfile({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
@@ -55,6 +56,8 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
     } finally { setFeedbackSending(false); }
   };
   const toggleNotifications = async () => {
+    if (notificationsUpdating) return;
+    setNotificationsUpdating(true);
     setNotificationStatus("");
     try {
       if (notificationsEnabled) {
@@ -66,13 +69,16 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
       }
     } catch (error) {
       setNotificationStatus(error.message || "Unable to update notification settings.");
+    } finally {
+      setNotificationsUpdating(false);
     }
   };
 
   return (
     <div className="modal fade show settings-modal" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }} onClick={onClose}>
       <div className="modal-dialog modal-dialog-centered modal-sm" onClick={(event) => event.stopPropagation()}>
-        <div className="modal-content">
+        <div className="modal-content settings-modal-content">
+          {notificationsUpdating && <div className="notification-loading-overlay" role="status" aria-live="polite"><div className="spinner-border text-primary" aria-hidden="true" /><span>Updating notifications…</span></div>}
           <div className="modal-header">
             <h5 className="modal-title">Settings</h5>
             <button type="button" className="btn-close" onClick={onClose} aria-label="Close settings" />
@@ -99,7 +105,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             </div>
             <div className="settings-field">
               <label htmlFor="settings-zone">📍 Sharing area</label>
-              <select id="settings-zone" className="form-select" value={activeZone || ""} onChange={(event) => onZoneChange?.(event.target.value)}>
+              <select id="settings-zone" className="form-select settings-select" value={activeZone || ""} onChange={(event) => onZoneChange?.(event.target.value)}>
                 {zones.map((zone) => <option value={zone.slug} key={zone.slug} disabled={zone.enabled === false}>{zone.countryCode === "FR" ? "🇫🇷" : zone.countryCode === "GR" ? "🇬🇷" : "🌍"} {zone.name}{zone.enabled === false ? " · Coming soon" : ""}</option>)}
               </select>
               <small className="text-muted">Only books listed in this area are shown.</small>
@@ -107,7 +113,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
 
             <div className="settings-field">
               <label htmlFor="settings-language"><Globe2 size={17} /> Interface language</label>
-              <select id="settings-language" className="form-select" value={language} onChange={updateLanguage}>
+              <select id="settings-language" className="form-select settings-select" value={language} onChange={updateLanguage}>
                 <option value="en">English</option>
                 <option value="fr" disabled>Français · Coming soon</option>
                 <option value="el" disabled>Ελληνικά · Coming soon</option>
@@ -126,7 +132,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
               <div className="availability-toggle-row settings-notification-toggle">
                 <strong><Bell size={17} aria-hidden="true" /> Allow notifications</strong>
-                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} id="settings-notifications" aria-label="Allow notifications" /></div>
+                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} disabled={notificationsUpdating} id="settings-notifications" aria-label="Allow notifications" /></div>
               </div>
               <p className="text-muted small mb-2">Get a notification when you receive a new message, even when Maki Books is closed.</p>
               {notificationStatus && <div className="text-muted small mt-2" role="status">{notificationStatus}</div>}

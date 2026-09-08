@@ -6,6 +6,12 @@ export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zo
   const [showSettings, setShowSettings] = React.useState(false);
   const [showRealisticLogo, setShowRealisticLogo] = React.useState(false);
 
+  React.useEffect(() => {
+    const openSettings = () => setShowSettings(true);
+    window.addEventListener("maki-open-settings", openSettings);
+    return () => window.removeEventListener("maki-open-settings", openSettings);
+  }, []);
+
   return (
     <header className="bg-white shadow-sm py-3 site-header">
       {welcomeMessage && (
