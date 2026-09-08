@@ -153,7 +153,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
               <div className="availability-toggle-row settings-notification-toggle">
                 <strong><Bell size={17} aria-hidden="true" /> Allow notifications</strong>
-                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} disabled={notificationsUpdating || notificationPermission === "denied"} id="settings-notifications" aria-label="Allow notifications" /></div>
+                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={notificationsEnabled} onChange={toggleNotifications} disabled={notificationsUpdating} id="settings-notifications" aria-label="Allow notifications" /></div>
               </div>
               <p className="text-muted small mb-2">Get a notification when you receive a new message, even when Maki Books is closed.</p>
               {notificationPermission === "denied" && <div className="text-muted small mt-2" role="status">You previously chose not to allow notifications. Your phone or browser has remembered this choice, so Maki Books cannot ask again here. Leave Maki Books briefly, open your phone or browser settings, allow notifications for Maki Books, then reopen this Settings window.</div>}
