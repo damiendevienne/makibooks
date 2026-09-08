@@ -29,7 +29,7 @@ export default function PasswordResetPage() {
       setChecking(false);
       return () => { active = false; };
     }
-    api.get("/api/auth/reset-password/validate", { params: { code } })
+    api.get("/api/auth/reset-password/validate", { params: { code }, skipAuth: true })
       .then(() => { if (active) setValidLink(true); })
       .catch((err) => { if (active) setError((err.response?.data?.error?.message && err.response.data.error.message !== "Not Found") ? err.response.data.error.message : "This reset link is invalid or has expired."); })
       .finally(() => { if (active) setChecking(false); });
@@ -45,7 +45,7 @@ export default function PasswordResetPage() {
     if (password !== passwordConfirmation) return setError("The passwords do not match.");
     setSaving(true);
     try {
-      await api.post("/api/auth/reset-password", { code, password, passwordConfirmation });
+      await api.post("/api/auth/reset-password", { code, password, passwordConfirmation }, { skipAuth: true });
       window.location.href = "/?login=1";
     } catch (err) {
       setError(err.response?.data?.error?.message || "This reset link is invalid or has expired.");

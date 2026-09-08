@@ -7,7 +7,7 @@ const api = axios.create({ baseURL: apiBaseUrl });
 api.interceptors.request.use((config) => {
   const jwt = localStorage.getItem("jwt");
 
-  if (jwt) {
+  if (jwt && !config.skipAuth) {
     config.headers.Authorization = `Bearer ${jwt}`;
   }
 
