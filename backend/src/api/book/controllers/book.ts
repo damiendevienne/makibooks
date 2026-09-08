@@ -108,7 +108,21 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
       };
       const sort = String(ctx.query.sort || 'newest');
       const orderBy = sort === 'title-asc' ? { title: 'asc' } : sort === 'title-desc' ? { title: 'desc' } : sort === 'author-asc' ? { author: 'asc' } : { createdAt: 'desc' };
-      const total = await strapi.db.query('api::book.book').count({ where });
+      // Compute summary values from the complete filtered result set, rather
+      // than from the current page. This keeps the catalogue counters correct
+      // while the frontend progressively loads more books.
+      const matchingRows = await strapi.db.query('api::book.book').findMany({ where, select: ['id', 'available'] });
+      const total = matchingRows.length;
+      const matchingBookIds = new Set(matchingRows.map((book) => book.id));
+      const activeLoans = await strapi.db.query('api::loan.loan').findMany({
+        where: { status: 'active' },
+        populate: { book: true },
+      });
+      const activeBookIds = new Set(activeLoans
+        .map((loan) => loan.book?.id)
+        .filter((bookId) => bookId && matchingBookIds.has(bookId)));
+      const available = matchingRows.filter((book) => book.available && !activeBookIds.has(book.id)).length;
+      const onLoan = activeBookIds.size;
       const books = await strapi.db.query('api::book.book').findMany({
         where,
         orderBy,
@@ -120,7 +134,7 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
         ...publicBook(book),
         hasLoanHistory: (book.loans || []).some((loan) => loan.status === 'active' || loan.status === 'returned'),
       }));
-      return { data, meta: { pagination: { page, pageSize, pageCount: Math.ceil(total / pageSize), total } } };
+      return { data, meta: { pagination: { page, pageSize, pageCount: Math.ceil(total / pageSize), total }, stats: { total, available, onLoan } } };
     }
     const response = await super.find(ctx);
     if (Array.isArray(response.data)) {

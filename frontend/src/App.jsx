@@ -56,6 +56,7 @@ function App() {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [cataloguePage, setCataloguePage] = useState(1);
   const [catalogueTotal, setCatalogueTotal] = useState(0);
+  const [catalogueStats, setCatalogueStats] = useState(null);
   const [catalogueHasMore, setCatalogueHasMore] = useState(false);
   const [catalogueLoadingMore, setCatalogueLoadingMore] = useState(false);
   const catalogueSentinelRef = useRef(null);
@@ -233,7 +234,9 @@ function App() {
     const response = await api.get(`${catalogueUrl}&page=1&pageSize=${cataloguePageSize}`);
     applyCatalogueBooks(response.data.data || []);
     const pagination = response.data.meta?.pagination;
+    const stats = response.data.meta?.stats;
     setCatalogueTotal(Number(pagination?.total || 0));
+    setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
     setCataloguePage(1);
     setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
   };
@@ -246,7 +249,9 @@ function App() {
       const response = await api.get(`${catalogueUrl}&page=${nextPage}&pageSize=${cataloguePageSize}`);
       applyCatalogueBooks(response.data.data || [], true);
       const pagination = response.data.meta?.pagination;
+      const stats = response.data.meta?.stats;
       setCatalogueTotal(Number(pagination?.total || 0));
+      setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
       setCataloguePage(nextPage);
       setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
     } finally {
@@ -283,7 +288,9 @@ function App() {
           if (!cancelled) {
             applyCatalogueBooks(res.data.data || []);
             const pagination = res.data.meta?.pagination;
+            const stats = res.data.meta?.stats;
             setCatalogueTotal(Number(pagination?.total || 0));
+            setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
             setCataloguePage(1);
             setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
             setCatalogueState("ready");
@@ -391,7 +398,7 @@ function App() {
     if (sortOrder === "author-asc") return String(left.author || "").localeCompare(String(right.author || ""), undefined, { sensitivity: "base" });
     return new Date(right.createdAt || 0) - new Date(left.createdAt || 0);
   });
-  const libraryStats = useMemo(() => books.reduce((stats, entry) => {
+  const loadedLibraryStats = useMemo(() => books.reduce((stats, entry) => {
     const book = entry.attributes || entry;
     stats.total += 1;
     if (book.available) stats.available += 1;
@@ -400,6 +407,7 @@ function App() {
     }
     return stats;
   }, { total: 0, available: 0, onLoan: 0 }), [books]);
+  const libraryStats = catalogueStats || loadedLibraryStats;
   const catalogueIsFiltered = Boolean(searchTerm.trim() || activeFilterCount || favoritesOnly);
 
   return (
