@@ -1,5 +1,5 @@
 import React from "react";
-import { Settings, UserRound } from "lucide-react";
+import { MapPin, Settings, UserRound } from "lucide-react";
 import SettingsModal from "./SettingsModal";
 
 export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zones, onZoneChange, welcomeMessage, onDismissWelcome }) {
@@ -21,6 +21,9 @@ export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zo
         </div>
       )}
       <div className="container text-center">
+        <button type="button" className="zone-location-trigger" onClick={() => setShowSettings(true)} aria-label={`Sharing area: ${activeZone || "not selected"}`} title="Open sharing area settings">
+          <MapPin size={16} strokeWidth={2} aria-hidden="true" /><span>{zones?.find((zone) => zone.slug === activeZone)?.name || activeZone || "Sharing area"}</span>
+        </button>
         <button
           type="button"
           className={`settings-trigger ${isLoggedIn ? "is-logged-in" : "is-logged-out"}`}
@@ -32,6 +35,7 @@ export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zo
             <span className="account-icon-circle account-user-circle"><UserRound className="account-user-icon" size={21} /></span>
             <span className="account-icon-circle account-settings-circle"><Settings className="account-settings-icon" size={21} /></span>
           </span>
+          {isLoggedIn && <span className="account-username">{user?.username || "Account"}</span>}
         </button>
         <div className="text-center my-4 logo-stage">
           <button

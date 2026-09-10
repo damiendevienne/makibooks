@@ -2005,12 +2005,49 @@ footer .btn small {
   align-items: center;
   justify-content: center;
   width: 4.15rem;
-  height: 2.35rem;
+  height: 3.45rem;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--maki-books-navy);
+  flex-direction: column;
+}
+
+.account-username {
+  display: block;
+  max-width: 5.5rem;
+  overflow: hidden;
+  margin-top: 0.08rem;
+  color: currentColor;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zone-location-trigger {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.35rem 0.45rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--maki-books-navy);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.zone-location-trigger:hover,
+.zone-location-trigger:focus-visible {
+  background: #eef4f6;
+  outline: none;
 }
 
 .settings-trigger.is-logged-in {
