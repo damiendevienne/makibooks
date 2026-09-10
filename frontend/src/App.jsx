@@ -57,6 +57,7 @@ function App() {
   const [cataloguePage, setCataloguePage] = useState(1);
   const [catalogueTotal, setCatalogueTotal] = useState(0);
   const [catalogueStats, setCatalogueStats] = useState(null);
+  const [filterPreviewCount, setFilterPreviewCount] = useState(0);
   const [catalogueHasMore, setCatalogueHasMore] = useState(false);
   const [catalogueLoadingMore, setCatalogueLoadingMore] = useState(false);
   const catalogueSentinelRef = useRef(null);
@@ -201,6 +202,27 @@ function App() {
   catalogueQuery.set("sort", sortOrder);
   const catalogueUrl = `/api/books?${catalogueQuery.toString()}`;
   const cataloguePageSize = 24;
+
+  useEffect(() => {
+    let cancelled = false;
+    const previewQuery = new URLSearchParams({ populate: "*", zone: activeZone, page: "1", pageSize: "1" });
+    if (searchTerm.trim()) previewQuery.set("search", searchTerm.trim());
+    if (pendingFilters.age) previewQuery.set("age", pendingFilters.age);
+    if (pendingFilters.language) previewQuery.set("language", pendingFilters.language);
+    if (pendingFilters.available) previewQuery.set("available", pendingFilters.available === "yes" ? "true" : "false");
+    if (pendingFilters.owner) previewQuery.set("owner", pendingFilters.owner);
+    if (favoritesOnly) previewQuery.set("favoriteIds", favoriteBookIds.join(","));
+    const timer = window.setTimeout(() => {
+      api.get(`/api/books?${previewQuery.toString()}`)
+        .then((response) => {
+          if (!cancelled) setFilterPreviewCount(Number(response.data.meta?.pagination?.total || 0));
+        })
+        .catch(() => {
+          if (!cancelled) setFilterPreviewCount(books.filter((book) => matchesFilters(book, pendingFilters)).length);
+        });
+    }, 180);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [activeZone, searchTerm, pendingFilters, favoritesOnly, favoriteBookIds, books]);
 
   const handleZoneChange = (slug) => {
     if (!slug) return;
@@ -386,7 +408,6 @@ function App() {
     return true;
   };
   const filteredBooks = books.filter((b) => matchesFilters(b, filters));
-  const filterPreviewCount = books.filter((b) => matchesFilters(b, pendingFilters)).length;
   const activeFilterCount = Object.values(filters).filter((v) => v).length;
   const sortedBooks = [...filteredBooks].sort((leftEntry, rightEntry) => {
     const left = leftEntry.attributes || leftEntry;
