@@ -298,16 +298,13 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
     const data = { ...(ctx.request.body?.data || {}) };
     delete data.owner;
     delete data.description;
-    const historicalLoan = await strapi.db.query('api::loan.loan').findOne({
-      where: { book: book.id, status: { $in: ['active', 'returned'] } },
-    });
-    if (historicalLoan) {
-      ['title', 'author', 'coverUrl', 'isbn', 'catalogSource', 'catalogId', 'image', 'language', 'age', 'summary', 'ownerComment'].forEach((field) => delete data[field]);
-    }
+    delete data.title;
+    delete data.author;
+    delete data.loans;
+    delete data.zone;
+    delete data.archived;
     if (!normalizeUserText(data, 'summary', 1500, ctx) || !normalizeUserText(data, 'ownerComment', 500, ctx)) return;
-    if (book.catalogSource === 'openlibrary') {
-      ['title', 'author', 'coverUrl', 'isbn', 'catalogSource', 'catalogId', 'image', 'language'].forEach((field) => delete data[field]);
-    }
+    ['catalogSource', 'catalogId'].forEach((field) => delete data[field]);
     if (imageCount(data.image) > 2) {
       return ctx.badRequest('A book can have at most 2 images.');
     }
