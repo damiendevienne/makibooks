@@ -106,6 +106,15 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
         ...(ctx.query.available === 'true' ? { available: true } : ctx.query.available === 'false' ? { available: false } : {}),
         ...(ctx.query.favoriteIds ? { documentId: favoriteIds.length ? { $in: favoriteIds } : '__no_favorites__' } : {}),
       };
+      const catalogueRows = await strapi.db.query('api::book.book').findMany({
+        where: {
+          zone: zone.id,
+          $or: [{ archived: false }, { archived: { $null: true } }],
+          publishedAt: { $notNull: true },
+        },
+        select: ['id'],
+      });
+      const catalogueTotal = catalogueRows.length;
       const sort = String(ctx.query.sort || 'newest');
       const orderBy = sort === 'title-asc' ? { title: 'asc' } : sort === 'title-desc' ? { title: 'desc' } : sort === 'author-asc' ? { author: 'asc' } : { createdAt: 'desc' };
       // Compute summary values from the complete filtered result set, rather
@@ -134,7 +143,7 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
         ...publicBook(book),
         hasLoanHistory: (book.loans || []).some((loan) => loan.status === 'active' || loan.status === 'returned'),
       }));
-      return { data, meta: { pagination: { page, pageSize, pageCount: Math.ceil(total / pageSize), total }, stats: { total, available, onLoan } } };
+      return { data, meta: { pagination: { page, pageSize, pageCount: Math.ceil(total / pageSize), total }, stats: { total, available, onLoan }, catalogueTotal } };
     }
     const response = await super.find(ctx);
     if (Array.isArray(response.data)) {

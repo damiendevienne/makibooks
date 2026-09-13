@@ -56,6 +56,7 @@ function App() {
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
   const [cataloguePage, setCataloguePage] = useState(1);
   const [catalogueTotal, setCatalogueTotal] = useState(0);
+  const [catalogueOverallTotal, setCatalogueOverallTotal] = useState(0);
   const [catalogueStats, setCatalogueStats] = useState(null);
   const [filterPreviewCount, setFilterPreviewCount] = useState(0);
   const [catalogueHasMore, setCatalogueHasMore] = useState(false);
@@ -273,7 +274,9 @@ function App() {
     applyCatalogueBooks(response.data.data || []);
     const pagination = response.data.meta?.pagination;
     const stats = response.data.meta?.stats;
+    const overallTotal = Number(response.data.meta?.catalogueTotal ?? pagination?.total ?? 0);
     setCatalogueTotal(Number(pagination?.total || 0));
+    setCatalogueOverallTotal(overallTotal);
     setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
     cataloguePageRef.current = 1;
     catalogueHasMoreRef.current = Boolean(pagination && pagination.page < pagination.pageCount);
@@ -297,7 +300,9 @@ function App() {
       applyCatalogueBooks(response.data.data || [], true);
       const pagination = response.data.meta?.pagination;
       const stats = response.data.meta?.stats;
+      const overallTotal = Number(response.data.meta?.catalogueTotal ?? pagination?.total ?? 0);
       setCatalogueTotal(Number(pagination?.total || 0));
+      setCatalogueOverallTotal(overallTotal);
       setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
       cataloguePageRef.current = nextPage;
       catalogueHasMoreRef.current = Boolean(pagination && pagination.page < pagination.pageCount);
@@ -340,7 +345,9 @@ function App() {
             applyCatalogueBooks(res.data.data || []);
             const pagination = res.data.meta?.pagination;
             const stats = res.data.meta?.stats;
+            const overallTotal = Number(res.data.meta?.catalogueTotal ?? pagination?.total ?? 0);
             setCatalogueTotal(Number(pagination?.total || 0));
+            setCatalogueOverallTotal(overallTotal);
             setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
             cataloguePageRef.current = 1;
             catalogueHasMoreRef.current = Boolean(pagination && pagination.page < pagination.pageCount);
@@ -490,7 +497,7 @@ function App() {
             </button>
           </div>
           <div className="library-summary" aria-live="polite">
-            <span><strong>{catalogueIsFiltered ? `${sortedBooks.length}/${catalogueTotal}` : catalogueTotal}</strong> {catalogueIsFiltered ? "shown" : catalogueTotal === 1 ? "book" : "books"}</span>
+            <span><strong>{catalogueIsFiltered ? `${catalogueTotal}/${catalogueOverallTotal}` : catalogueOverallTotal}</strong> {catalogueIsFiltered ? "shown" : catalogueOverallTotal === 1 ? "book" : "books"}</span>
             <span><strong>{libraryStats.available}</strong> available</span>
             <span><strong>{libraryStats.onLoan}</strong> on loan</span>
           </div>
