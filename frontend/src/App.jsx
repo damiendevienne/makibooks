@@ -63,6 +63,9 @@ function App() {
   const catalogueSentinelRef = useRef(null);
   const catalogueGenerationRef = useRef(0);
   const catalogueUrlRef = useRef("");
+  const cataloguePageRef = useRef(1);
+  const catalogueHasMoreRef = useRef(false);
+  const catalogueLoadingMoreRef = useRef(false);
 
   useEffect(() => {
     if (isLoggedIn) setShowLogin(false);
@@ -205,6 +208,8 @@ function App() {
   const catalogueUrl = `/api/books?${catalogueQuery.toString()}`;
   const cataloguePageSize = 24;
   catalogueUrlRef.current = catalogueUrl;
+  cataloguePageRef.current = cataloguePage;
+  catalogueHasMoreRef.current = catalogueHasMore;
 
   useEffect(() => {
     let cancelled = false;
@@ -270,28 +275,36 @@ function App() {
     const stats = response.data.meta?.stats;
     setCatalogueTotal(Number(pagination?.total || 0));
     setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
+    cataloguePageRef.current = 1;
+    catalogueHasMoreRef.current = Boolean(pagination && pagination.page < pagination.pageCount);
     setCataloguePage(1);
     setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
   };
 
   const loadMoreCatalogue = async () => {
-    if (catalogueLoadingMore || !catalogueHasMore) return;
-    const requestUrl = catalogueUrl;
+    if (catalogueLoadingMoreRef.current || !catalogueHasMoreRef.current) return;
+    // Read the current query from a ref. The observer can outlive a render
+    // (especially just after applying filters), so its callback must not use
+    // an URL or page captured by an older closure.
+    const requestUrl = catalogueUrlRef.current;
     const requestGeneration = catalogueGenerationRef.current;
-    if (requestUrl !== catalogueUrlRef.current) return;
+    const nextPage = cataloguePageRef.current + 1;
+    catalogueLoadingMoreRef.current = true;
     setCatalogueLoadingMore(true);
     try {
-      const nextPage = cataloguePage + 1;
       const response = await api.get(`${requestUrl}&page=${nextPage}&pageSize=${cataloguePageSize}`);
-      if (requestGeneration !== catalogueGenerationRef.current || requestUrl !== catalogueUrlRef.current) return;
+      if (requestGeneration !== catalogueGenerationRef.current) return;
       applyCatalogueBooks(response.data.data || [], true);
       const pagination = response.data.meta?.pagination;
       const stats = response.data.meta?.stats;
       setCatalogueTotal(Number(pagination?.total || 0));
       setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
+      cataloguePageRef.current = nextPage;
+      catalogueHasMoreRef.current = Boolean(pagination && pagination.page < pagination.pageCount);
       setCataloguePage(nextPage);
       setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
     } finally {
+      catalogueLoadingMoreRef.current = false;
       setCatalogueLoadingMore(false);
     }
   };
@@ -329,6 +342,8 @@ function App() {
             const stats = res.data.meta?.stats;
             setCatalogueTotal(Number(pagination?.total || 0));
             setCatalogueStats(stats ? { total: Number(stats.total || 0), available: Number(stats.available || 0), onLoan: Number(stats.onLoan || 0) } : null);
+            cataloguePageRef.current = 1;
+            catalogueHasMoreRef.current = Boolean(pagination && pagination.page < pagination.pageCount);
             setCataloguePage(1);
             setCatalogueHasMore(Boolean(pagination && pagination.page < pagination.pageCount));
             setCatalogueState("ready");
