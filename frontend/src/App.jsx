@@ -61,6 +61,8 @@ function App() {
   const [catalogueHasMore, setCatalogueHasMore] = useState(false);
   const [catalogueLoadingMore, setCatalogueLoadingMore] = useState(false);
   const catalogueSentinelRef = useRef(null);
+  const catalogueGenerationRef = useRef(0);
+  const catalogueUrlRef = useRef("");
 
   useEffect(() => {
     if (isLoggedIn) setShowLogin(false);
@@ -202,6 +204,7 @@ function App() {
   catalogueQuery.set("sort", sortOrder);
   const catalogueUrl = `/api/books?${catalogueQuery.toString()}`;
   const cataloguePageSize = 24;
+  catalogueUrlRef.current = catalogueUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -247,7 +250,17 @@ function App() {
 
   const applyCatalogueBooks = (entries, append = false) => {
     const nextBooks = entries.map(normalizeBookAvailability);
-    setBooks((current) => append ? [...current, ...nextBooks] : nextBooks);
+    setBooks((current) => {
+      const merged = append ? [...current, ...nextBooks] : nextBooks;
+      const seen = new Set();
+      return merged.filter((entry) => {
+        const book = entry.attributes || entry;
+        const identifier = String(book.documentId || book.id || "");
+        if (!identifier || seen.has(identifier)) return false;
+        seen.add(identifier);
+        return true;
+      });
+    });
   };
 
   const refreshCatalogue = async () => {
@@ -263,10 +276,14 @@ function App() {
 
   const loadMoreCatalogue = async () => {
     if (catalogueLoadingMore || !catalogueHasMore) return;
+    const requestUrl = catalogueUrl;
+    const requestGeneration = catalogueGenerationRef.current;
+    if (requestUrl !== catalogueUrlRef.current) return;
     setCatalogueLoadingMore(true);
     try {
       const nextPage = cataloguePage + 1;
-      const response = await api.get(`${catalogueUrl}&page=${nextPage}&pageSize=${cataloguePageSize}`);
+      const response = await api.get(`${requestUrl}&page=${nextPage}&pageSize=${cataloguePageSize}`);
+      if (requestGeneration !== catalogueGenerationRef.current || requestUrl !== catalogueUrlRef.current) return;
       applyCatalogueBooks(response.data.data || [], true);
       const pagination = response.data.meta?.pagination;
       const stats = response.data.meta?.stats;
@@ -301,11 +318,12 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
+    const requestGeneration = ++catalogueGenerationRef.current;
     const refresh = () => {
       api
         .get(`${catalogueUrl}&page=1&pageSize=${cataloguePageSize}`)
         .then((res) => {
-          if (!cancelled) {
+          if (!cancelled && requestGeneration === catalogueGenerationRef.current) {
             applyCatalogueBooks(res.data.data || []);
             const pagination = res.data.meta?.pagination;
             const stats = res.data.meta?.stats;
@@ -407,7 +425,9 @@ function App() {
   
     return true;
   };
-  const filteredBooks = books.filter((b) => matchesFilters(b, filters));
+  // The API already applies the active search and filters. Keep the returned
+  // page intact so the displayed list cannot diverge from its server total.
+  const filteredBooks = books;
   const activeFilterCount = Object.values(filters).filter((v) => v).length;
   const sortedBooks = [...filteredBooks].sort((leftEntry, rightEntry) => {
     const left = leftEntry.attributes || leftEntry;
