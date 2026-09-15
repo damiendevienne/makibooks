@@ -20,6 +20,7 @@ const formatUpdate = (content: string, actor: string, bookTitle: string) => {
   if (content.startsWith('The loan request was refused')) return `${actor || 'The lender'} declined your request for ${book}.`;
   if (content.startsWith('The borrowing request was cancelled')) return `${actor || 'The borrower'} canceled the request for ${book}.`;
   if (content.startsWith('The loan was cancelled')) return `${actor || 'The borrower'} canceled the loan for ${book}.`;
+  if (content.startsWith('You recovered your book')) return `You recovered ${book}.`;
   return content;
 };
 
