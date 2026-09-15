@@ -28,6 +28,21 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
   }, [user?.id]);
 
   useEffect(() => {
+    if (!show || !isLoggedIn) return undefined;
+    let active = true;
+    api.get("/api/profile")
+      .then((response) => {
+        if (!active) return;
+        const current = response.data.data;
+        setProfile({ username: current.username || "", email: current.email || "", firstName: current.firstName || "", lastName: current.lastName || "" });
+        setEmailNotificationsEnabled(current.emailNotifications !== false);
+        localStorage.setItem("user", JSON.stringify({ ...user, ...current }));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [show, isLoggedIn]);
+
+  useEffect(() => {
     if (!show || !pushNotificationsAvailable()) return undefined;
     const refreshNotificationState = async () => {
       const permission = getNotificationPermission();

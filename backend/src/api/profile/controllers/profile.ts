@@ -1,6 +1,16 @@
 import { isValidEmailUnsubscribeToken } from '../../../services/emailUnsubscribe';
 
 export default {
+  async find(ctx) {
+    const current = ctx.state.user;
+    if (!current) return ctx.unauthorized();
+    const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+      where: { id: current.id },
+      select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'emailNotifications'],
+    });
+    if (!user) return ctx.notFound('Profile not found.');
+    ctx.body = { data: { ...user, emailNotifications: user.emailNotifications !== false } };
+  },
   async unsubscribe(ctx) {
     const userId = Number(ctx.query.id);
     const token = String(ctx.query.token || '');
