@@ -1,4 +1,5 @@
 import { buildDailyActivityEmail } from './activityEmail';
+import { createEmailUnsubscribeToken } from './emailUnsubscribe';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -81,7 +82,9 @@ export async function runDailyActivityDigest(strapi: any, options: { now?: Date;
     if (!userActivities.length) continue;
     const email = options.testRecipient || user.email;
     if (!email) continue;
-    const content = buildDailyActivityEmail(user.username || 'there', userActivities, process.env.PUBLIC_APP_URL || 'https://makibooks.org');
+    const appUrl = process.env.PUBLIC_APP_URL || 'https://makibooks.org';
+    const unsubscribeUrl = `${appUrl.replace(/\/$/, '')}/unsubscribe-email?id=${encodeURIComponent(user.id)}&token=${createEmailUnsubscribeToken(user)}`;
+    const content = buildDailyActivityEmail(user.username || 'there', userActivities, appUrl, unsubscribeUrl);
     await strapi.plugin('email').service('email').send({ to: email, subject: content.subject, text: content.text, html: content.html });
     await strapi.db.query('plugin::users-permissions.user').update({ where: { id: user.id }, data: { lastActivityDigestAt: now } });
     results.push({ userId: user.id, email, activityCount: userActivities.length });

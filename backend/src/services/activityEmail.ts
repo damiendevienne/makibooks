@@ -28,7 +28,7 @@ export const buildDailyActivitySubject = (activities: Activity[]) => {
   return `Maki Books today: ${activities.length} updates`;
 };
 
-export const buildDailyActivityEmail = (username: string, activities: Activity[], appUrl: string) => {
+export const buildDailyActivityEmail = (username: string, activities: Activity[], appUrl: string, unsubscribeUrl?: string) => {
   const requests = activities.filter((activity) => activity.type === 'request');
   const messages = activities.filter((activity) => activity.type === 'message');
   const updates = activities.filter((activity) => activity.type === 'update');
@@ -39,10 +39,10 @@ export const buildDailyActivityEmail = (username: string, activities: Activity[]
   ].filter(Boolean) as { title: string; items: string[] }[];
   const plainSections = sections.flatMap((section) => [section.title, ...section.items, '']);
   const htmlSections = sections.map((section) => `<h3 style="color:#315a73;margin:1.25rem 0 .4rem">${escapeHtml(section.title)}</h3><ul>${section.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`).join('');
-  const unsubscribeUrl = `${appUrl.replace(/\/$/, '')}/unsubscribe-email`;
+  const resolvedUnsubscribeUrl = unsubscribeUrl || `${appUrl.replace(/\/$/, '')}/unsubscribe-email`;
   return {
     subject: buildDailyActivitySubject(activities),
-    text: `Hello ${username},\n\nThere was activity on your Maki Books account today.\n\n${plainSections.join('\n')}\nOpen Maki Books to view the full activity: ${appUrl}\n\nWe only send emails when there is activity on your account. · You are receiving this email because email notifications are enabled in your Maki Books settings. · Unsubscribe from Maki Books emails: ${unsubscribeUrl}`,
-    html: `<div style="font-family:Arial,sans-serif;color:#263746;line-height:1.5"><p>Hello ${escapeHtml(username)},</p><p>There was activity on your Maki Books account today.</p>${htmlSections}<p><a href="${escapeHtml(appUrl)}" style="display:inline-block;padding:12px 18px;background:#6bb5f3;color:#111;text-decoration:none;border-radius:6px;font-weight:600">Open Maki Books</a></p><p style="margin:24px 0 0;color:#6c757d;font-size:11px;line-height:1.4">We only send emails when there is activity on your account. · You are receiving this email because email notifications are enabled in your Maki Books settings. · <a href="${escapeHtml(unsubscribeUrl)}" style="color:#6c757d">Unsubscribe from Maki Books emails</a></p></div>`,
+    text: `Hello ${username},\n\nThere was activity on your Maki Books account today.\n\n${plainSections.join('\n')}\nOpen Maki Books to view the full activity: ${appUrl}\n\nWe only send emails when there is activity on your account. · You are receiving this email because email notifications are enabled in your Maki Books settings. · Unsubscribe from Maki Books emails: ${resolvedUnsubscribeUrl}`,
+    html: `<div style="font-family:Arial,sans-serif;color:#263746;line-height:1.5"><p>Hello ${escapeHtml(username)},</p><p>There was activity on your Maki Books account today.</p>${htmlSections}<p><a href="${escapeHtml(appUrl)}" style="display:inline-block;padding:12px 18px;background:#6bb5f3;color:#111;text-decoration:none;border-radius:6px;font-weight:600">Open Maki Books</a></p><p style="margin:24px 0 0;color:#6c757d;font-size:11px;line-height:1.4">We only send emails when there is activity on your account. · You are receiving this email because email notifications are enabled in your Maki Books settings. · <a href="${escapeHtml(resolvedUnsubscribeUrl)}" style="color:#6c757d">Unsubscribe from Maki Books emails</a></p></div>`,
   };
 };
