@@ -87,6 +87,7 @@ export async function runDailyActivityDigest(strapi: any, options: { now?: Date;
     const content = buildDailyActivityEmail(user.username || 'there', userActivities, appUrl, unsubscribeUrl);
     await strapi.plugin('email').service('email').send({ to: email, subject: content.subject, text: content.text, html: content.html });
     await strapi.db.query('plugin::users-permissions.user').update({ where: { id: user.id }, data: { lastActivityDigestAt: now } });
+    strapi.log.info(`Daily activity digest sent to ${user.username || 'user'} <${email}> (${userActivities.length} activities).`);
     results.push({ userId: user.id, email, activityCount: userActivities.length });
   }
   return results;
