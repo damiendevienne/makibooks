@@ -1,4 +1,5 @@
 import { isValidEmailUnsubscribeToken } from '../../../services/emailUnsubscribe';
+import { emailNotificationsEnabled } from '../../../services/emailPreference';
 
 export default {
   async find(ctx) {
@@ -28,7 +29,7 @@ export default {
         select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'emailNotifications'],
       });
       if (!user) return ctx.notFound('Profile not found.');
-      ctx.body = { data: { ...user, emailNotifications: user.emailNotifications !== false } };
+      ctx.body = { data: { ...user, emailNotifications: emailNotificationsEnabled(user.emailNotifications) } };
       return;
     }
     const data = ctx.request.body?.data || {};
@@ -37,7 +38,7 @@ export default {
     const firstName = String(data.firstName ?? current.firstName ?? '').trim();
     const lastName = String(data.lastName ?? current.lastName ?? '').trim();
     const emailNotifications = data.emailNotifications === undefined
-      ? current.emailNotifications !== false
+      ? emailNotificationsEnabled(current.emailNotifications)
       : Boolean(data.emailNotifications);
     if (username.length < 3 || username.length > 50) return ctx.badRequest('Username must be between 3 and 50 characters.');
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return ctx.badRequest('Please enter a valid email address.');
@@ -46,6 +47,6 @@ export default {
     const emailChanged = email !== current.email;
     const updated = await strapi.plugin('users-permissions').service('user').edit(current.id, { username, email, firstName, lastName, emailNotifications, ...(emailChanged ? { confirmed: false } : {}) });
     if (emailChanged) await strapi.plugin('users-permissions').service('user').sendConfirmationEmail(updated);
-    ctx.body = { data: { id: updated.id, documentId: updated.documentId, username: updated.username, email: updated.email, firstName: updated.firstName, lastName: updated.lastName, confirmed: updated.confirmed, emailNotifications: updated.emailNotifications !== false }, emailConfirmationRequired: emailChanged };
+    ctx.body = { data: { id: updated.id, documentId: updated.documentId, username: updated.username, email: updated.email, firstName: updated.firstName, lastName: updated.lastName, confirmed: updated.confirmed, emailNotifications: emailNotificationsEnabled(updated.emailNotifications) }, emailConfirmationRequired: emailChanged };
   },
 };

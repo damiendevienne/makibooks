@@ -5,6 +5,8 @@ import packageJson from "../../package.json";
 import { disablePushNotifications, enablePushNotifications, getNotificationPermission, pushNotificationsAvailable } from "../pushNotifications";
 import { FilterMenu } from "./FilterPanel";
 
+const emailNotificationsEnabled = (value) => !(value === false || value === 0 || value === "false" || value === "0");
+
 export default function SettingsModal({ show, onClose, isLoggedIn, user, onLoginToggle, activeZone, zones = [], onZoneChange }) {
   const [language, setLanguage] = useState(() => localStorage.getItem("preferredLanguage") || "en");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -12,7 +14,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState("");
   const [profile, setProfile] = useState({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
-  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(() => user?.emailNotifications !== false);
+  const [emailNotificationsEnabledState, setEmailNotificationsEnabled] = useState(() => emailNotificationsEnabled(user?.emailNotifications));
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileStatus, setProfileStatus] = useState("");
   const [profileEditing, setProfileEditing] = useState(false);
@@ -24,7 +26,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
 
   useEffect(() => {
     setProfile({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
-    setEmailNotificationsEnabled(user?.emailNotifications !== false);
+    setEmailNotificationsEnabled(emailNotificationsEnabled(user?.emailNotifications));
   }, [user?.id]);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
         if (!active) return;
         const current = response.data.data;
         setProfile({ username: current.username || "", email: current.email || "", firstName: current.firstName || "", lastName: current.lastName || "" });
-        setEmailNotificationsEnabled(current.emailNotifications !== false);
+        setEmailNotificationsEnabled(emailNotificationsEnabled(current.emailNotifications));
         localStorage.setItem("user", JSON.stringify({ ...user, ...current }));
       })
       .catch(() => {});
@@ -192,7 +194,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
             {isLoggedIn && <div className="settings-field">
               <div className="availability-toggle-row settings-notification-toggle">
                 <strong><Mail size={17} aria-hidden="true" /> Activity emails</strong>
-                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={emailNotificationsEnabled} onChange={toggleEmailNotifications} id="settings-email-notifications" aria-label="Receive activity emails" /></div>
+                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={emailNotificationsEnabledState} onChange={toggleEmailNotifications} id="settings-email-notifications" aria-label="Receive activity emails" /></div>
               </div>
               <p className="text-muted small mb-0">Receive a daily email only when there is activity on your account.</p>
             </div>}
