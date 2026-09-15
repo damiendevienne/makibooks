@@ -12,6 +12,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState("");
   const [profile, setProfile] = useState({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
+  const [emailNotificationsEnabled, setEmailNotificationsEnabled] = useState(() => user?.emailNotifications !== false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileStatus, setProfileStatus] = useState("");
   const [profileEditing, setProfileEditing] = useState(false);
@@ -23,20 +24,31 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
 
   useEffect(() => {
     setProfile({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
+    setEmailNotificationsEnabled(user?.emailNotifications !== false);
   }, [user?.id]);
 
   useEffect(() => {
     if (!show || !pushNotificationsAvailable()) return undefined;
-    const refreshNotificationPermission = () => {
-      setNotificationPermission(getNotificationPermission());
-      if (getNotificationPermission() === "granted") setNotificationStatus("");
+    const refreshNotificationState = async () => {
+      const permission = getNotificationPermission();
+      setNotificationPermission(permission);
+      if (permission === "granted") setNotificationStatus("");
+      try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+        setNotificationsEnabled(Boolean(subscription));
+        if (subscription) localStorage.setItem("pushNotificationsEnabled", "true");
+        else localStorage.removeItem("pushNotificationsEnabled");
+      } catch (_) {
+        // Keep the current switch state if the browser cannot inspect the subscription.
+      }
     };
-    refreshNotificationPermission();
-    window.addEventListener("focus", refreshNotificationPermission);
-    document.addEventListener("visibilitychange", refreshNotificationPermission);
+    refreshNotificationState();
+    window.addEventListener("focus", refreshNotificationState);
+    document.addEventListener("visibilitychange", refreshNotificationState);
     return () => {
-      window.removeEventListener("focus", refreshNotificationPermission);
-      document.removeEventListener("visibilitychange", refreshNotificationPermission);
+      window.removeEventListener("focus", refreshNotificationState);
+      document.removeEventListener("visibilitychange", refreshNotificationState);
     };
   }, [show]);
 
@@ -81,6 +93,18 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
     } catch (error) {
       setFeedbackStatus(error.response?.data?.error?.message || "Unable to send your message. Please try again.");
     } finally { setFeedbackSending(false); }
+  };
+  const toggleEmailNotifications = async (event) => {
+    const nextValue = event.target.checked;
+    setEmailNotificationsEnabled(nextValue);
+    try {
+      const response = await api.put("/api/profile", { data: { emailNotifications: nextValue } });
+      const updated = response.data.data;
+      localStorage.setItem("user", JSON.stringify({ ...user, ...updated }));
+    } catch (error) {
+      setEmailNotificationsEnabled(!nextValue);
+      setProfileStatus(error.response?.data?.error?.message || "Unable to update email settings.");
+    }
   };
   const toggleNotifications = async () => {
     if (notificationsUpdating) return;
@@ -150,6 +174,13 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
               {feedbackStatus && <div className="text-muted small mt-2" role="status">{feedbackStatus}</div>}
             </div>
             }
+            {isLoggedIn && <div className="settings-field">
+              <div className="availability-toggle-row settings-notification-toggle">
+                <strong><Mail size={17} aria-hidden="true" /> Activity emails</strong>
+                <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={emailNotificationsEnabled} onChange={toggleEmailNotifications} id="settings-email-notifications" aria-label="Receive activity emails" /></div>
+              </div>
+              <p className="text-muted small mb-0">Receive a daily email only when there is activity on your account.</p>
+            </div>}
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
               <div className="availability-toggle-row settings-notification-toggle">
                 <strong><Bell size={17} aria-hidden="true" /> Allow notifications</strong>

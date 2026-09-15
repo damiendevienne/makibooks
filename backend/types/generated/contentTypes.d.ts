@@ -1183,6 +1183,8 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         minLength: 6;
       }>;
+    emailNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
     favoriteBookIds: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<[]>;
     firstName: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{

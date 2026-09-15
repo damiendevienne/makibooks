@@ -90,6 +90,10 @@
       "enum": ["system", "light", "dark"],
       "default": "system"
     },
+    "emailNotifications": {
+      "type": "boolean",
+      "default": true
+    },
     "communityCharterAccepted": {
       "type": "boolean",
       "default": false
