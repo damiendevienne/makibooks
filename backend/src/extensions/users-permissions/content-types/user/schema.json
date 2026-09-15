@@ -126,6 +126,9 @@
       "target": "api::push-subscription.push-subscription",
       "mappedBy": "user"
     },
+    "lastActivityDigestAt": {
+      "type": "datetime"
+    },
     "loansAsLender": {
       "type": "relation",
       "relation": "oneToMany",

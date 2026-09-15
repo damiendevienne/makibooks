@@ -1,5 +1,6 @@
 import { isValidEmailUnsubscribeToken } from '../../../services/emailUnsubscribe';
 import { emailNotificationsEnabled } from '../../../services/emailPreference';
+import { runDailyActivityDigest } from '../../../services/dailyDigest';
 
 export default {
   async find(ctx) {
@@ -23,6 +24,12 @@ export default {
   },
   async update(ctx) {
     const current = ctx.state.user;
+    if (ctx.request.method === 'POST' && ctx.path.endsWith('/email-digest-test')) {
+      if (!current) return ctx.unauthorized();
+      const result = await runDailyActivityDigest(strapi, { userId: current.id, testRecipient: current.email });
+      ctx.body = { data: { sent: result.length > 0, activityCount: result[0]?.activityCount || 0, recipient: current.email } };
+      return;
+    }
     if (ctx.request.method === 'GET') {
       const user = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: current.id },

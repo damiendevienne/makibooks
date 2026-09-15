@@ -13,6 +13,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
   const [feedback, setFeedback] = useState("");
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackStatus, setFeedbackStatus] = useState("");
+  const [digestTestStatus, setDigestTestStatus] = useState("");
   const [profile, setProfile] = useState({ username: user?.username || "", email: user?.email || "", firstName: user?.firstName || "", lastName: user?.lastName || "" });
   const [emailNotificationsEnabledState, setEmailNotificationsEnabled] = useState(() => emailNotificationsEnabled(user?.emailNotifications));
   const [profileSaving, setProfileSaving] = useState(false);
@@ -132,6 +133,16 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
       setProfileStatus(error.response?.data?.error?.message || "Unable to update email settings.");
     }
   };
+  const sendDigestTest = async () => {
+    setDigestTestStatus("Sending…");
+    try {
+      const response = await api.post("/api/profile/email-digest-test");
+      const result = response.data.data;
+      setDigestTestStatus(result.sent ? `Sent to ${result.recipient}.` : "No activity in the last 24 hours, so no email was sent.");
+    } catch (error) {
+      setDigestTestStatus(error.response?.data?.error?.message || "Unable to send the test email.");
+    }
+  };
   const toggleNotifications = async () => {
     if (notificationsUpdating) return;
     setNotificationsUpdating(true);
@@ -206,6 +217,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
                 <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={emailNotificationsEnabledState} onChange={toggleEmailNotifications} id="settings-email-notifications" aria-label="Receive activity emails" /></div>
               </div>
               <p className="text-muted small mb-0">Receive a daily email only when there is activity on your account.</p>
+              {new URLSearchParams(window.location.search).get("emailDigestTest") === "1" && <><button type="button" className="btn btn-outline-primary btn-sm mt-2" onClick={sendDigestTest}>Send test digest</button>{digestTestStatus && <div className="text-muted small mt-2" role="status">{digestTestStatus}</div>}</>}
             </div>}
             {isLoggedIn && pushNotificationsAvailable() && <div className="settings-field">
               <div className="availability-toggle-row settings-notification-toggle">
