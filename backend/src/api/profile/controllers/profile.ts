@@ -22,6 +22,15 @@ export default {
   },
   async update(ctx) {
     const current = ctx.state.user;
+    if (ctx.request.method === 'GET') {
+      const user = await strapi.db.query('plugin::users-permissions.user').findOne({
+        where: { id: current.id },
+        select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'emailNotifications'],
+      });
+      if (!user) return ctx.notFound('Profile not found.');
+      ctx.body = { data: { ...user, emailNotifications: user.emailNotifications !== false } };
+      return;
+    }
     const data = ctx.request.body?.data || {};
     const username = String(data.username ?? current.username).trim();
     const email = String(data.email ?? current.email).trim().toLowerCase();
