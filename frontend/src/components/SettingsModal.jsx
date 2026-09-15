@@ -36,6 +36,15 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
       .then((response) => {
         if (!active) return;
         const current = response.data.data;
+        console.info("Maki Books profile from Strapi", {
+          username: current.username,
+          email: current.email,
+          confirmed: current.confirmed,
+          blocked: current.blocked,
+          communityCharterAccepted: current.communityCharterAccepted,
+          preferredLocale: current.preferredLocale,
+          emailNotifications: current.emailNotifications,
+        });
         setProfile({ username: current.username || "", email: current.email || "", firstName: current.firstName || "", lastName: current.lastName || "" });
         setEmailNotificationsEnabled(emailNotificationsEnabled(current.emailNotifications));
         localStorage.setItem("user", JSON.stringify({ ...user, ...current }));

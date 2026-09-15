@@ -26,7 +26,7 @@ export default {
     if (ctx.request.method === 'GET') {
       const user = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: current.id },
-        select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'emailNotifications'],
+        select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'blocked', 'communityCharterAccepted', 'preferredLocale', 'emailNotifications'],
       });
       if (!user) return ctx.notFound('Profile not found.');
       ctx.body = { data: { ...user, emailNotifications: emailNotificationsEnabled(user.emailNotifications) } };
