@@ -3,6 +3,7 @@ export default ({ env }) => ({
   port: env.int('PORT', 1337),
   url: env('PUBLIC_APP_URL', 'http://localhost:5174'),
   proxy: { koa: true },
+  cron: { enabled: true },
   app: {
     keys: env.array('APP_KEYS'),
   },
