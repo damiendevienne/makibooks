@@ -14,6 +14,15 @@ const addActivity = (activities: Map<number, any[]>, userId: number, activity: a
   activities.set(userId, current);
 };
 
+const formatUpdate = (content: string, actor: string, bookTitle: string) => {
+  const book = bookTitle ? `“${bookTitle}”` : 'this book';
+  if (content.startsWith('You can now discuss')) return `${actor || 'The lender'} accepted your request for ${book}.`;
+  if (content.startsWith('The loan request was refused')) return `${actor || 'The lender'} declined your request for ${book}.`;
+  if (content.startsWith('The borrowing request was cancelled')) return `${actor || 'The borrower'} canceled the request for ${book}.`;
+  if (content.startsWith('The loan was cancelled')) return `${actor || 'The borrower'} canceled the loan for ${book}.`;
+  return content;
+};
+
 export async function runDailyActivityDigest(strapi: any, options: { now?: Date; testRecipient?: string; userId?: number } = {}) {
   const now = options.now || new Date();
   const nowMs = now.getTime();
@@ -56,9 +65,12 @@ export async function runDailyActivityDigest(strapi: any, options: { now?: Date;
     const window = windows.get(recipient?.id);
     if (!window || new Date(message.createdAt) < window) continue;
     const bookTitle = conversation?.loans?.find((loan: any) => loan.book)?.book?.title;
+    // The initial system message mirrors the borrowing request and must not
+    // appear a second time in the digest.
+    if (message.isSystem && String(message.content || '').startsWith('Borrow request for')) continue;
     const isSystemUpdate = Boolean(message.isSystem);
     addActivity(activities, recipient.id, isSystemUpdate
-      ? { type: 'update', bookTitle, text: message.content }
+      ? { type: 'update', bookTitle, username: message.sender?.username, text: formatUpdate(String(message.content || ''), message.sender?.username, bookTitle) }
       : { type: 'message', bookTitle });
   }
 
