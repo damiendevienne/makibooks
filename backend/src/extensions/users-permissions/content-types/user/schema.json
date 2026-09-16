@@ -129,6 +129,10 @@
     "lastActivityDigestAt": {
       "type": "datetime"
     },
+    "hideOwnBooks": {
+      "type": "boolean",
+      "default": false
+    },
     "loansAsLender": {
       "type": "relation",
       "relation": "oneToMany",

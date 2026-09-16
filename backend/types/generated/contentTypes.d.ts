@@ -1190,6 +1190,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 80;
       }>;
+    hideOwnBooks: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     lastActivityDigestAt: Schema.Attribute.DateTime;
     lastName: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{

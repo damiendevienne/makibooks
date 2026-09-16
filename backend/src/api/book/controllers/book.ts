@@ -86,6 +86,7 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
       if (!zone) return ctx.notFound('Sharing area not found.');
       const ownerId = ctx.query.filters?.owner?.id?.$eq;
       const ownerUsername = String(ctx.query.owner || '').trim();
+      const excludeOwnerId = Number(ctx.query.excludeOwner || 0);
       const owners = ownerUsername
         ? await strapi.db.query('plugin::users-permissions.user').findMany({ where: { username: { $containsi: ownerUsername } }, select: ['id'] })
         : [];
@@ -95,6 +96,7 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
       const pageSize = Number.isFinite(requestedPageSize) ? Math.min(100, Math.max(1, Math.floor(requestedPageSize))) : 24;
       const search = String(ctx.query.search || '').trim();
       const favoriteIds = String(ctx.query.favoriteIds || '').split(',').map((id) => id.trim()).filter(Boolean);
+      const favoritesFilterRequested = Object.prototype.hasOwnProperty.call(ctx.query, 'favoriteIds');
       const where = {
         zone: zone.id,
         $or: [{ archived: false }, { archived: { $null: true } }],
@@ -104,13 +106,15 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
         ...(ctx.query.age ? { age: String(ctx.query.age) } : {}),
         ...(ctx.query.language ? { language: String(ctx.query.language) } : {}),
         ...(ctx.query.available === 'true' ? { available: true } : ctx.query.available === 'false' ? { available: false } : {}),
-        ...(ctx.query.favoriteIds ? { documentId: favoriteIds.length ? { $in: favoriteIds } : '__no_favorites__' } : {}),
+        ...(favoritesFilterRequested ? { documentId: favoriteIds.length ? { $in: favoriteIds } : '__no_favorites__' } : {}),
+        ...(excludeOwnerId ? { owner: { $ne: excludeOwnerId } } : {}),
       };
       const catalogueRows = await strapi.db.query('api::book.book').findMany({
         where: {
           zone: zone.id,
           $or: [{ archived: false }, { archived: { $null: true } }],
           publishedAt: { $notNull: true },
+          ...(excludeOwnerId ? { owner: { $ne: excludeOwnerId } } : {}),
         },
         select: ['id'],
       });

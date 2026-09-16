@@ -7,7 +7,7 @@ import { FilterMenu } from "./FilterPanel";
 
 const emailNotificationsEnabled = (value) => !(value === false || value === 0 || value === "false" || value === "0");
 
-export default function SettingsModal({ show, onClose, isLoggedIn, user, onLoginToggle, activeZone, zones = [], onZoneChange }) {
+export default function SettingsModal({ show, onClose, isLoggedIn, user, onLoginToggle, activeZone, zones = [], onZoneChange, onProfileUpdate }) {
   const [language, setLanguage] = useState(() => localStorage.getItem("preferredLanguage") || "en");
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -49,6 +49,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
         setProfile({ username: current.username || "", email: current.email || "", firstName: current.firstName || "", lastName: current.lastName || "" });
         setEmailNotificationsEnabled(emailNotificationsEnabled(current.emailNotifications));
         localStorage.setItem("user", JSON.stringify({ ...user, ...current }));
+        onProfileUpdate?.(current);
       })
       .catch(() => {});
     return () => { active = false; };
@@ -128,6 +129,7 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
       const response = await api.put("/api/profile", { data: { emailNotifications: nextValue } });
       const updated = response.data.data;
       localStorage.setItem("user", JSON.stringify({ ...user, ...updated }));
+      onProfileUpdate?.(updated);
     } catch (error) {
       setEmailNotificationsEnabled(!nextValue);
       setProfileStatus(error.response?.data?.error?.message || "Unable to update email settings.");

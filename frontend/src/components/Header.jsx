@@ -2,7 +2,7 @@ import React from "react";
 import { MapPin, Settings, UserRound } from "lucide-react";
 import SettingsModal from "./SettingsModal";
 
-export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zones, onZoneChange, welcomeMessage, onDismissWelcome }) {
+export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zones, onZoneChange, welcomeMessage, onDismissWelcome, onProfileUpdate }) {
   const [showSettings, setShowSettings] = React.useState(false);
   const [showRealisticLogo, setShowRealisticLogo] = React.useState(false);
 
@@ -65,6 +65,7 @@ export default function Header({ isLoggedIn, user, onLoginToggle, activeZone, zo
         activeZone={activeZone}
         zones={zones}
         onZoneChange={onZoneChange}
+        onProfileUpdate={onProfileUpdate}
       />
     </header>
   );

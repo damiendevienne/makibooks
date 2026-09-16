@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { HeartCrack } from "lucide-react";
+import { Eye, EyeOff, HeartCrack } from "lucide-react";
 import api from "./api";
 import Header from "./components/Header";
 import BookCard from "./components/BookCard";
@@ -34,6 +34,8 @@ function App() {
   const [sortOrder, setSortOrder] = useState("newest");
   const [favoriteBookIds, setFavoriteBookIds] = useState([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [hideOwnBooks, setHideOwnBooks] = useState(() => JSON.parse(localStorage.getItem("user") || "null")?.hideOwnBooks === true);
+  const [showOwnBooksConfirm, setShowOwnBooksConfirm] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [openConversationId, setOpenConversationId] = useState(null);
@@ -205,6 +207,7 @@ function App() {
   if (filters.available) catalogueQuery.set("available", filters.available === "yes" ? "true" : "false");
   if (filters.owner) catalogueQuery.set("owner", filters.owner);
   if (favoritesOnly) catalogueQuery.set("favoriteIds", favoriteBookIds.join(","));
+  if (hideOwnBooks && user?.id) catalogueQuery.set("excludeOwner", String(user.id));
   catalogueQuery.set("sort", sortOrder);
   const catalogueUrl = `/api/books?${catalogueQuery.toString()}`;
   const cataloguePageSize = 24;
@@ -331,6 +334,20 @@ function App() {
     }
     refreshCatalogue()
       .catch((err) => console.error("Unable to refresh the book catalogue:", err));
+  };
+
+  const toggleOwnBooksVisibility = async () => {
+    const nextValue = !hideOwnBooks;
+    try {
+      const response = await api.put("/api/profile", { data: { hideOwnBooks: nextValue } });
+      const updated = response.data.data;
+      setUser((current) => ({ ...current, ...updated }));
+      setHideOwnBooks(nextValue);
+      localStorage.setItem("user", JSON.stringify({ ...user, ...updated }));
+      setShowOwnBooksConfirm(false);
+    } catch (error) {
+      setWelcomeMessage(error.response?.data?.error?.message || "Unable to update catalogue settings.");
+    }
   };
 
 
@@ -482,6 +499,7 @@ function App() {
         onZoneChange={handleZoneChange}
         welcomeMessage={welcomeMessage}
         onDismissWelcome={() => setWelcomeMessage("")}
+        onProfileUpdate={(updated) => { setUser((current) => ({ ...current, ...updated })); setHideOwnBooks(updated?.hideOwnBooks === true); }}
       />
       {showInstallPrompt && <div className="install-app-prompt" role="status">
         <div><strong>Add Maki Books to your home screen</strong><small>Open it quickly like an app whenever you want to borrow or share a book.</small></div>
@@ -528,6 +546,9 @@ function App() {
       <div className="container pt-3 pb-4">
         <div className="library-sort-row">
           {favoritesOnly && <button type="button" className="favorites-filter-chip" onClick={() => setFavoritesOnly(false)}>♥ Favorites only ×</button>}
+          {isLoggedIn && <button type="button" className={`own-books-visibility-chip ${hideOwnBooks ? "is-hidden" : ""}`} onClick={() => setShowOwnBooksConfirm(true)} aria-label={hideOwnBooks ? "Your books are hidden" : "Your books are visible"} title={hideOwnBooks ? "Your books are hidden" : "Your books are visible"}>
+            {hideOwnBooks ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
+          </button>}
           <label className="library-sort-label" htmlFor="library-sort">
             <span className="visually-hidden">Sort by</span>
             <select id="library-sort" className="form-select form-select-sm" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)}>
@@ -538,6 +559,23 @@ function App() {
             </select>
           </label>
         </div>
+        {showOwnBooksConfirm && <div className="modal fade show own-books-confirm-modal" style={{ display: "block" }} role="dialog" aria-modal="true" aria-labelledby="own-books-confirm-title" onClick={() => setShowOwnBooksConfirm(false)}>
+          <div className="modal-dialog modal-dialog-centered" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-content rounded-4 shadow-lg">
+              <div className="modal-header border-0">
+                <h5 className="modal-title" id="own-books-confirm-title">{hideOwnBooks ? "Show your own books in the catalogue?" : "Hide your own books from the catalogue?"}</h5>
+                <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowOwnBooksConfirm(false)} />
+              </div>
+              <div className="modal-body pt-0">
+                <p>{hideOwnBooks ? "Your own books will appear in the catalogue again." : "Your own books will no longer appear in the catalogue."}</p>
+                <div className="d-flex justify-content-end gap-2">
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => setShowOwnBooksConfirm(false)}>Cancel</button>
+                  <button type="button" className="btn btn-primary" onClick={toggleOwnBooksVisibility}>OK</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>}
         {favoritesOnly && sortedBooks.length === 0 && <div className="favorites-empty-state">
           <span className="favorites-empty-icon" aria-hidden="true"><HeartCrack size={34} strokeWidth={1.6} /></span>
           <strong>{favoriteBookIds.length === 0 ? "No favorites yet." : "No favorites match your current filters."}</strong>

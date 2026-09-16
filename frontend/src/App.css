@@ -54,6 +54,29 @@ body,
   font-weight: 500; /* optional */
 }
 
+.own-books-visibility-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(72, 146, 183, 0.4);
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  color: #23617d;
+  background: #eef8fc;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.own-books-visibility-chip.is-hidden {
+  color: #1f5874;
+  background: #e1f2fa;
+}
+
+.own-books-confirm-modal {
+  background: rgba(0, 0, 0, 0.35);
+}
+
 .conversation-section-heading {
   display: flex;
   align-items: center;

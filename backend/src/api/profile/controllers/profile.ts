@@ -33,7 +33,7 @@ export default {
     if (ctx.request.method === 'GET') {
       const user = await strapi.db.query('plugin::users-permissions.user').findOne({
         where: { id: current.id },
-        select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'blocked', 'communityCharterAccepted', 'preferredLocale', 'emailNotifications'],
+        select: ['id', 'documentId', 'username', 'email', 'firstName', 'lastName', 'confirmed', 'blocked', 'communityCharterAccepted', 'preferredLocale', 'emailNotifications', 'hideOwnBooks'],
       });
       if (!user) return ctx.notFound('Profile not found.');
       ctx.body = { data: { ...user, emailNotifications: emailNotificationsEnabled(user.emailNotifications) } };
@@ -44,6 +44,7 @@ export default {
     const email = String(data.email ?? current.email).trim().toLowerCase();
     const firstName = String(data.firstName ?? current.firstName ?? '').trim();
     const lastName = String(data.lastName ?? current.lastName ?? '').trim();
+    const hideOwnBooks = data.hideOwnBooks === undefined ? current.hideOwnBooks === true : Boolean(data.hideOwnBooks);
     const emailNotifications = data.emailNotifications === undefined
       ? emailNotificationsEnabled(current.emailNotifications)
       : Boolean(data.emailNotifications);
@@ -52,8 +53,8 @@ export default {
     const duplicate = await strapi.db.query('plugin::users-permissions.user').findOne({ where: { $or: [{ username }, { email }], id: { $ne: current.id } } });
     if (duplicate) return ctx.badRequest('That username or email address is already in use.');
     const emailChanged = email !== current.email;
-    const updated = await strapi.plugin('users-permissions').service('user').edit(current.id, { username, email, firstName, lastName, emailNotifications, ...(emailChanged ? { confirmed: false } : {}) });
+    const updated = await strapi.plugin('users-permissions').service('user').edit(current.id, { username, email, firstName, lastName, emailNotifications, hideOwnBooks, ...(emailChanged ? { confirmed: false } : {}) });
     if (emailChanged) await strapi.plugin('users-permissions').service('user').sendConfirmationEmail(updated);
-    ctx.body = { data: { id: updated.id, documentId: updated.documentId, username: updated.username, email: updated.email, firstName: updated.firstName, lastName: updated.lastName, confirmed: updated.confirmed, emailNotifications: emailNotificationsEnabled(updated.emailNotifications) }, emailConfirmationRequired: emailChanged };
+    ctx.body = { data: { id: updated.id, documentId: updated.documentId, username: updated.username, email: updated.email, firstName: updated.firstName, lastName: updated.lastName, confirmed: updated.confirmed, emailNotifications: emailNotificationsEnabled(updated.emailNotifications), hideOwnBooks: updated.hideOwnBooks === true }, emailConfirmationRequired: emailChanged };
   },
 };
