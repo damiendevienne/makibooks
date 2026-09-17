@@ -1315,10 +1315,6 @@ footer .btn small {
   font-size: 12px;
 }
 
-.incoming-message-time {
-  margin-left: 18px;
-}
-
 .message-read-status {
   display: inline-flex;
   align-items: center;
