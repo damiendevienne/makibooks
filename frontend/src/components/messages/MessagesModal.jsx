@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Archive, ArrowLeft, BookOpenCheck, ChevronDown, ChevronRight, Clock3, Send } from "lucide-react";
+import { Archive, ArrowLeft, BookOpenCheck, Check, CheckCheck, ChevronDown, ChevronRight, Clock3, Send } from "lucide-react";
 import api, { mediaUrl } from "../../api";
 
 function otherParticipant(conversation, userId) {
@@ -65,10 +65,7 @@ function loanTiming(loan) {
 
 function messageTime(value) {
   if (!value) return "";
-  const date = new Date(value); const now = new Date();
-  if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-  return date.toDateString() === yesterday.toDateString() ? "Yesterday" : date.toLocaleDateString();
+  return new Date(value).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function messageDayLabel(value) {
@@ -454,7 +451,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
                       {canArrangeReturn && <button type="button" className="btn btn-outline-success btn-sm arrange-return-button" onClick={openReturnComposer}>Arrange the return</button>}
                     </> : completionNotice ? <><div className="completion-confirmation-message"><strong>{completionConfirmation}</strong>{completionGuidance && <div className="completion-main-copy">{completionGuidance}</div>}</div><small className="message-time d-block">{messageTime(message.createdAt)}</small>{completionClosing && <div className="completion-guidance-message">{completionClosing}</div>}</> : cancelledNotice ? <>{content}{cancellationPendingArchive && <><small className="refusal-archive-hint d-block mt-2">Clicking OK will archive this discussion.</small><button type="button" className="btn btn-sm refusal-confirm-button mt-2" onClick={archiveRefusal}>OK</button></>}</> : loanReminderNotice ? renderLoanReminder(content) : !refusalNotice && content}
                   </div> : <span className={`d-inline-block rounded px-3 py-2 ${message.isSystem ? "bg-light text-muted" : message.sender?.id === user.id ? "message-bubble message-outgoing" : "message-bubble message-incoming"}`}>{content}</span>}
-                  {message.createdAt && !completionNotice && <small className="message-time">{messageTime(message.createdAt)}</small>}
+                  {message.createdAt && !completionNotice && <small className={`message-time ${message.sender?.id !== user.id && !message.isSystem ? "incoming-message-time" : ""}`}>{messageTime(message.createdAt)}{message.sender?.id === user.id && !message.isSystem && <span className={`message-read-status ${message.readAt ? "is-read" : ""}`} title={message.readAt ? "Seen" : "Sent"} aria-label={message.readAt ? "Seen" : "Sent"}>{message.readAt ? <CheckCheck size={15} strokeWidth={2.2} aria-hidden="true" /> : <Check size={15} strokeWidth={2.2} aria-hidden="true" />}</span>}</small>}
                   </div>
                 </React.Fragment>;
               }); })()}
