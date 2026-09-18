@@ -765,6 +765,12 @@ footer .btn,
 footer .btn small {
   white-space: nowrap;
 }
+
+footer.position-fixed > .container > .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
 .password-field .form-control { padding-right: 2.5rem; }
 .password-visibility-toggle {
   position: absolute;
