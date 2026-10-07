@@ -94,8 +94,23 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
   const [pendingLoanAction, setPendingLoanAction] = useState(null);
   const [collapsedDiscussionGroups, setCollapsedDiscussionGroups] = useState({ "past-owned": true, "past-borrowed": true });
   const returnMessageRef = useRef(null);
+  const draftRef = useRef(null);
   const conversationThreadRef = useRef(null);
   const closeModal = () => { setActive(null); onClose(); };
+
+  const resizeDraft = useCallback(() => {
+    const textarea = draftRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    const maxHeight = parseFloat(window.getComputedStyle(textarea).maxHeight);
+    const nextHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, []);
+
+  useEffect(() => {
+    resizeDraft();
+  }, [draft, resizeDraft]);
 
     const loadConversations = useCallback(() => api.get(`/api/conversations/mine?zone=${encodeURIComponent(activeZone || "heraklion")}`).then((res) => {
     const next = res.data.data || [];
@@ -485,7 +500,7 @@ export default function MessagesModal({ show, onClose, onContextBack, user, acti
               <button className="btn btn-success receipt-action-button" onClick={() => askLoanAction(loan, "confirm-received-back")}>✓ I recovered my book</button>
             </div>)}
             <form className="conversation-compose-bar border-top p-2 d-flex gap-2" onSubmit={sendMessage}>
-              <input className="form-control" value={draft} onChange={(e) => setDraft(e.target.value)} disabled={chatLocked} placeholder={conversationClosed ? "This discussion is archived." : "Write a message…"} />
+              <textarea ref={draftRef} rows="1" enterKeyHint="enter" className="form-control" value={draft} onChange={(e) => setDraft(e.target.value)} disabled={chatLocked} placeholder={conversationClosed ? "This discussion is archived." : "Write a message…"} />
               <button className="btn btn-primary" disabled={chatLocked || !draft.trim()}><Send size={17} /></button>
             </form>
           </div>}
