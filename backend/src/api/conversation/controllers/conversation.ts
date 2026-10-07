@@ -53,17 +53,8 @@ export default factories.createCoreController('api::conversation.conversation', 
     if (!userId) return ctx.unauthorized();
     const conversation = await this.findParticipantConversation(ctx.params.id, userId);
     if (!conversation) return ctx.notFound('Conversation not found.');
-    const loans = await strapi.db.query('api::loan.loan').findMany({ where: { conversation: conversation.id }, select: ['status'], populate: { lender: true } });
-    const hasOpenLoan = loans.some((loan) => loan.status === 'requested' || loan.status === 'active');
-    const withinGracePeriod = conversation.closedAt
-      && Date.now() - new Date(conversation.closedAt).getTime() < 24 * 60 * 60 * 1000;
-    const hasPendingRefusal = loans.some((loan) => loan.status === 'refused')
-      && (loans.some((loan) => loan.status === 'refused' && loan.lender?.id === userId) ? !conversation.lenderArchivedAt : !conversation.borrowerArchivedAt);
-    const hasPendingCancellation = loans.some((loan) => loan.status === 'cancelled')
-      && (loans.some((loan) => loan.status === 'cancelled' && loan.lender?.id === userId) ? !conversation.lenderArchivedAt : !conversation.borrowerArchivedAt);
-    if (conversation.closedAt && loans.length && !hasOpenLoan && !withinGracePeriod && !hasPendingRefusal && !hasPendingCancellation) {
-      return ctx.badRequest('This discussion is archived because the loan ended more than 24 hours ago.');
-    }
+    // Archived discussions remain readable, so opening one must still be able
+    // to clear incoming message badges.
     const unread = await strapi.db.query('api::message.message').findMany({
       where: { conversation: conversation.id, readAt: null }, populate: { sender: true },
     });
