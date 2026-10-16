@@ -481,8 +481,8 @@ body,
   text-align: left;
 }
 
-.filter-menu-option:hover,
 .filter-menu-option.is-selected { background: #edf4f4; }
+.filter-menu-option:hover:not(.is-selected) { background: transparent; }
 
 .filter-offcanvas-header {
   border-bottom: 1px solid rgba(49, 90, 115, 0.14);
@@ -2289,6 +2289,10 @@ footer.position-fixed > .container > .btn {
   color: var(--maki-books-navy);
 }
 .settings-account { padding-top: 0.1rem; }
+.settings-information-links { display: flex; flex-wrap: wrap; gap: 0.15rem 0.7rem; }
+.settings-information-links .btn-link { padding: 0; color: var(--maki-books-navy); font-size: 0.82rem; }
+.settings-information-links .btn-link:hover,
+.settings-information-links .btn-link:focus-visible { color: var(--maki-books-sage, #6f8661); }
 .settings-extra { margin-top: 1rem; padding: 0.75rem; border-radius: 0.5rem; background: rgba(127, 147, 111, 0.1); }
 .theme-dark { background: #1f2933 !important; color: #e8edf1; }
 .theme-dark .site-header,
