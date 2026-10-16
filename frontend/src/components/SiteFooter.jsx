@@ -44,10 +44,16 @@ function markdownToHtml(markdown) {
 }
 
 export default function SiteFooter({ canInstallApp = false, onInstallApp }) {
-  const [section, setSection] = useState(null);
+  const [sectionKey, setSectionKey] = useState(null);
   const [aboutText, setAboutText] = useState("");
   const sourceUrl = import.meta.env.VITE_SOURCE_URL || "https://github.com/damiendevienne/makibooks";
   const supportUrl = import.meta.env.VITE_SUPPORT_URL || "https://buymeacoffee.com/damiendevienne";
+
+  useEffect(() => {
+    const openInformation = (event) => setSectionKey(event.detail || "about");
+    window.addEventListener("maki-open-information", openInformation);
+    return () => window.removeEventListener("maki-open-information", openInformation);
+  }, []);
 
   useEffect(() => {
     fetch("/AboutText.md")
@@ -100,7 +106,7 @@ export default function SiteFooter({ canInstallApp = false, onInstallApp }) {
         <div className="container">
         <div className="site-footer-links">
           {Object.entries(content).map(([key, value]) => (
-            <button type="button" key={key} onClick={() => setSection(value)}>{value.footerLabel || value.title.replace("Maki Books", "").trim() || "About"}</button>
+            <button type="button" key={key} onClick={() => setSectionKey(key)}>{value.footerLabel || value.title.replace("Maki Books", "").trim() || "About"}</button>
           ))}
         </div>
         <div className="site-footer-copyright">
@@ -108,23 +114,28 @@ export default function SiteFooter({ canInstallApp = false, onInstallApp }) {
         </div>
         </div>
       </footer>
-      {section && (
-        <div className="modal fade show" style={{ display: "block", backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setSection(null)}>
+      {sectionKey && (sectionKey === "index" || content[sectionKey]) && (
+        <div className="modal fade show information-modal" style={{ display: "block", zIndex: 1080, backgroundColor: "rgba(0,0,0,0.5)" }} onClick={() => setSectionKey(null)}>
           <div className="modal-dialog modal-dialog-centered" onClick={(event) => event.stopPropagation()}>
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">{section.title}</h5>
-                <button type="button" className="btn-close" onClick={() => setSection(null)} aria-label="Close" />
+                <h5 className="modal-title">{sectionKey === "index" ? "Information" : content[sectionKey].title}</h5>
+                <button type="button" className="btn-close" onClick={() => setSectionKey(null)} aria-label="Close" />
               </div>
               <div className="modal-body">
-                {section.markdown !== undefined ? (section.markdown ? <div className="about-markdown" dangerouslySetInnerHTML={{ __html: markdownToHtml(section.markdown) }} /> : <p>Loading…</p>) : Array.isArray(section.body) ? section.body.map((paragraph, index) => <p key={index}>{paragraph}</p>) : <p>{section.body}</p>}
-                {section.sourceUrl && <p><a href={section.sourceUrl} target="_blank" rel="noreferrer">Get the source code</a>{" · "}<a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer">Read the AGPLv3 license</a></p>}
-                {section.installAvailable && canInstallApp && <button type="button" className="btn btn-primary w-100 mb-2" onClick={onInstallApp}>Install Maki Books as an app</button>}
-                {section.supportUrl && <a className="support-link" href={section.supportUrl} target="_blank" rel="noreferrer">Buy us a coffee! ☕</a>}
-                {section.signature && <p className="about-signature mb-0">{section.signature}</p>}
-                {section.points && <><ul>{section.points.map((point) => <li key={point}>{point}</li>)}</ul><p className="mb-0 fw-semibold text-center">{communityCharterClosing}</p></>}
+                {sectionKey === "index" ? <>
+                  <p className="text-muted">Find out more about Maki Books, how it works and the rules for our sharing community.</p>
+                  <div className="d-grid gap-2">{Object.entries(content).map(([key, value]) => <button type="button" className="btn btn-outline-primary text-start" key={key} onClick={() => setSectionKey(key)}>{value.footerLabel || value.title.replace("Maki Books", "").trim() || "About"}</button>)}</div>
+                </> : <>
+                  {content[sectionKey].markdown !== undefined ? (content[sectionKey].markdown ? <div className="about-markdown" dangerouslySetInnerHTML={{ __html: markdownToHtml(content[sectionKey].markdown) }} /> : <p>Loading…</p>) : Array.isArray(content[sectionKey].body) ? content[sectionKey].body.map((paragraph, index) => <p key={index}>{paragraph}</p>) : <p>{content[sectionKey].body}</p>}
+                  {content[sectionKey].sourceUrl && <p><a href={content[sectionKey].sourceUrl} target="_blank" rel="noreferrer">Get the source code</a>{" · "}<a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer">Read the AGPLv3 license</a></p>}
+                  {content[sectionKey].installAvailable && canInstallApp && <button type="button" className="btn btn-primary w-100 mb-2" onClick={onInstallApp}>Install Maki Books as an app</button>}
+                  {content[sectionKey].supportUrl && <a className="support-link" href={content[sectionKey].supportUrl} target="_blank" rel="noreferrer">Buy us a coffee! ☕</a>}
+                  {content[sectionKey].signature && <p className="about-signature mb-0">{content[sectionKey].signature}</p>}
+                  {content[sectionKey].points && <><ul>{content[sectionKey].points.map((point) => <li key={point}>{point}</li>)}</ul><p className="mb-0 fw-semibold text-center">{communityCharterClosing}</p></>}
+                </>}
               </div>
-              <div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={() => setSection(null)}>Close</button></div>
+              <div className="modal-footer"><button type="button" className="btn btn-secondary" onClick={() => setSectionKey(null)}>Close</button></div>
             </div>
           </div>
         </div>

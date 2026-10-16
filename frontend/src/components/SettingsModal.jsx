@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Bell, Globe2, LogOut, Mail, Pencil, UserRound } from "lucide-react";
+import { Bell, Globe2, Info, LogOut, Mail, Pencil, UserRound } from "lucide-react";
 import api from "../api";
 import packageJson from "../../package.json";
 import { disablePushNotifications, enablePushNotifications, getNotificationPermission, pushNotificationsAvailable } from "../pushNotifications";
@@ -203,6 +203,15 @@ export default function SettingsModal({ show, onClose, isLoggedIn, user, onLogin
               <label htmlFor="settings-language"><Globe2 size={17} /> Interface language</label>
               <FilterMenu label="Interface language" value={language} options={languageOptions} onChange={(value) => updateLanguage({ target: { value } })} />
               <small className="text-muted">Your preference is saved for this device.</small>
+            </div>
+
+            <div className="settings-field">
+              <div className="settings-account-title"><Info size={17} /> Information</div>
+              <div className="settings-information-links" aria-label="Maki Books information">
+                {[['about', 'About'], ['help', 'Help'], ['legal', 'Legal'], ['charter', 'Charter'], ['support', 'Support ☕']].map(([key, label]) => (
+                  <button type="button" className="btn btn-link btn-sm" key={key} onClick={() => window.dispatchEvent(new CustomEvent("maki-open-information", { detail: key }))}>{label}</button>
+                ))}
+              </div>
             </div>
 
             {isLoggedIn && <div className="settings-field">
