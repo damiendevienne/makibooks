@@ -481,8 +481,8 @@ body,
   text-align: left;
 }
 
-.filter-menu-option:hover,
 .filter-menu-option.is-selected { background: #edf4f4; }
+.filter-menu-option:hover:not(.is-selected) { background: transparent; }
 
 .filter-offcanvas-header {
   border-bottom: 1px solid rgba(49, 90, 115, 0.14);

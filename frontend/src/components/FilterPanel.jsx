@@ -7,9 +7,10 @@ const languageFlags = {
   PT: "🇵🇹", NL: "🇳🇱", AR: "🇸🇦", RU: "🇷🇺", ZH: "🇨🇳", JA: "🇯🇵",
 };
 
-export function FilterMenu({ label, value, options, onChange, renderOption = (option) => option.label }) {
+export function FilterMenu({ label, value, options, onChange, renderOption = (option) => option.label, multiple = false, renderValue }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
+  const selectedValues = multiple ? (Array.isArray(value) ? value : []) : [value];
   const selected = options.find((option) => option.value === value) || options[0];
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export function FilterMenu({ label, value, options, onChange, renderOption = (op
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
-        <span className="filter-menu-value">{renderOption(selected)}</span>
+        <span className="filter-menu-value">{renderValue ? renderValue(selectedValues, options) : renderOption(selected)}</span>
         <span className="filter-menu-chevron" aria-hidden="true">⌄</span>
       </button>
       {open && (
@@ -46,14 +47,27 @@ export function FilterMenu({ label, value, options, onChange, renderOption = (op
             <button
               type="button"
               role="option"
-              aria-selected={option.value === value}
+              aria-selected={selectedValues.includes(option.value)}
               disabled={option.disabled}
-              className={`filter-menu-option ${option.value === value ? "is-selected" : ""}`}
+              className={`filter-menu-option ${selectedValues.includes(option.value) ? "is-selected" : ""}`}
               key={option.value}
-              onClick={() => { onChange(option.value); setOpen(false); }}
+              onClick={() => {
+                if (!multiple) {
+                  onChange(option.value);
+                  setOpen(false);
+                  return;
+                }
+                if (!option.value) {
+                  onChange([]);
+                  return;
+                }
+                onChange(selectedValues.includes(option.value)
+                  ? selectedValues.filter((item) => item !== option.value)
+                  : [...selectedValues, option.value]);
+              }}
             >
               {renderOption(option)}
-              {option.value === value && <span className="filter-menu-check" aria-hidden="true">✓</span>}
+              {selectedValues.includes(option.value) && <span className="filter-menu-check" aria-hidden="true">✓</span>}
             </button>
           ))}
         </div>
@@ -93,7 +107,18 @@ export default function FilterPanel({ filters, setFilters, matchingCount, onAppl
         {/* Age */}
         <div className="mb-3">
           <label className="form-label">Age</label>
-          <FilterMenu label="Age" value={filters.age} options={ageOptions} onChange={(age) => setFilters({ ...filters, age })} />
+          <FilterMenu
+            label="Age"
+            value={filters.age}
+            options={ageOptions}
+            multiple
+            onChange={(age) => setFilters({ ...filters, age })}
+            renderValue={(selectedValues, options) => {
+              if (!selectedValues.length) return <span>All ages</span>;
+              const selectedOptions = selectedValues.map((value) => options.find((option) => option.value === value)).filter(Boolean);
+              return <span>{selectedOptions.length === 1 ? selectedOptions[0].label : `${selectedOptions.length} age ranges`}</span>;
+            }}
+          />
         </div>
 
         {/* Language */}
@@ -103,7 +128,13 @@ export default function FilterPanel({ filters, setFilters, matchingCount, onAppl
             label="Language"
             value={filters.language}
             options={languageOptions}
+            multiple
             onChange={(language) => setFilters({ ...filters, language })}
+            renderValue={(selectedValues, options) => {
+              if (!selectedValues.length) return <><span className="filter-language-flag" aria-hidden="true">🌐</span><span>All languages</span></>;
+              const selectedOptions = selectedValues.map((value) => options.find((option) => option.value === value)).filter(Boolean);
+              return <><span className="filter-language-flags" aria-hidden="true">{selectedOptions.map((option) => languageFlags[option.code] || "🌐").join(" ")}</span><span>{selectedOptions.length === 1 ? selectedOptions[0].label : `${selectedOptions.length} languages`}</span></>;
+            }}
             renderOption={(option) => <><span className="filter-language-flag" aria-hidden="true">{languageFlags[option.code] || "🌐"}</span><span>{option.label}</span>{option.code && <span className="filter-language-code">{option.code}</span>}</>}
           />
         </div>
@@ -148,7 +179,7 @@ export default function FilterPanel({ filters, setFilters, matchingCount, onAppl
             type="button"
             className="btn btn-outline-secondary"
             onClick={() =>
-              setFilters({ age: "", available: "", language: "", owner: "" })
+              setFilters({ age: [], available: "", language: [], owner: "" })
             }
           >
             Reset all filters

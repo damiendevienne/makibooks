@@ -29,8 +29,8 @@ function App() {
   });
   const [showZoneChooser, setShowZoneChooser] = useState(() => !window.location.pathname.split("/")[1] && !localStorage.getItem("activeZone"));
   const [searchTerm, setSearchTerm] = useState("");
-  const [filters, setFilters] = useState({ age: "", available: "", language: "", owner: "" });
-  const [pendingFilters, setPendingFilters] = useState({ age: "", available: "", language: "", owner: "" });
+  const [filters, setFilters] = useState({ age: [], available: "", language: [], owner: "" });
+  const [pendingFilters, setPendingFilters] = useState({ age: [], available: "", language: [], owner: "" });
   const [sortOrder, setSortOrder] = useState("newest");
   const [favoriteBookIds, setFavoriteBookIds] = useState([]);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -202,8 +202,8 @@ function App() {
 
   const catalogueQuery = new URLSearchParams({ populate: "*", zone: activeZone });
   if (searchTerm.trim()) catalogueQuery.set("search", searchTerm.trim());
-  if (filters.age) catalogueQuery.set("age", filters.age);
-  if (filters.language) catalogueQuery.set("language", filters.language);
+  if (filters.age.length) catalogueQuery.set("age", filters.age.join(","));
+  if (filters.language.length) catalogueQuery.set("language", filters.language.join(","));
   if (filters.available) catalogueQuery.set("available", filters.available === "yes" ? "true" : "false");
   if (filters.owner) catalogueQuery.set("owner", filters.owner);
   if (favoritesOnly) catalogueQuery.set("favoriteIds", favoriteBookIds.join(","));
@@ -219,8 +219,8 @@ function App() {
     let cancelled = false;
     const previewQuery = new URLSearchParams({ populate: "*", zone: activeZone, page: "1", pageSize: "1" });
     if (searchTerm.trim()) previewQuery.set("search", searchTerm.trim());
-    if (pendingFilters.age) previewQuery.set("age", pendingFilters.age);
-    if (pendingFilters.language) previewQuery.set("language", pendingFilters.language);
+    if (pendingFilters.age.length) previewQuery.set("age", pendingFilters.age.join(","));
+    if (pendingFilters.language.length) previewQuery.set("language", pendingFilters.language.join(","));
     if (pendingFilters.available) previewQuery.set("available", pendingFilters.available === "yes" ? "true" : "false");
     if (pendingFilters.owner) previewQuery.set("owner", pendingFilters.owner);
     if (favoritesOnly) previewQuery.set("favoriteIds", favoriteBookIds.join(","));
@@ -445,7 +445,7 @@ function App() {
     if (term && !title.includes(term) && !author.includes(term)) return false;
   
     // Age filter
-    if (activeFilters.age && book.age !== activeFilters.age) return false;
+    if (activeFilters.age.length && !activeFilters.age.includes(book.age)) return false;
   
     // Availability filter
     if (activeFilters.available) {
@@ -454,7 +454,7 @@ function App() {
     }
   
     // Language filter
-    if (activeFilters.language && book.language !== activeFilters.language) return false;
+    if (activeFilters.language.length && !activeFilters.language.includes(book.language)) return false;
   
     // 🆕 Owner filter (accent & case insensitive + partial match)
     if (ownerFilter && !ownerName.includes(ownerFilter)) return false;
@@ -467,7 +467,7 @@ function App() {
   // The API already applies the active search and filters. Keep the returned
   // page intact so the displayed list cannot diverge from its server total.
   const filteredBooks = books;
-  const activeFilterCount = Object.values(filters).filter((v) => v).length;
+  const activeFilterCount = Object.values(filters).filter((v) => Array.isArray(v) ? v.length > 0 : Boolean(v)).length;
   const sortedBooks = [...filteredBooks].sort((leftEntry, rightEntry) => {
     const left = leftEntry.attributes || leftEntry;
     const right = rightEntry.attributes || rightEntry;

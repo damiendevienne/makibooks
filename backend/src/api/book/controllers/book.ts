@@ -95,6 +95,8 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
       const page = Number.isFinite(requestedPage) ? Math.max(1, Math.floor(requestedPage)) : 1;
       const pageSize = Number.isFinite(requestedPageSize) ? Math.min(100, Math.max(1, Math.floor(requestedPageSize))) : 24;
       const search = String(ctx.query.search || '').trim();
+      const ages = String(ctx.query.age || '').split(',').map((age) => age.trim()).filter(Boolean);
+      const languages = String(ctx.query.language || '').split(',').map((language) => language.trim()).filter(Boolean);
       const favoriteIds = String(ctx.query.favoriteIds || '').split(',').map((id) => id.trim()).filter(Boolean);
       const favoritesFilterRequested = Object.prototype.hasOwnProperty.call(ctx.query, 'favoriteIds');
       const where = {
@@ -103,8 +105,8 @@ export default factories.createCoreController('api::book.book', ({ strapi }) => 
         publishedAt: { $notNull: true },
         ...((ownerId || owners.length) ? { owner: ownerId ? Number(ownerId) : { $in: owners.map((item) => item.id) } } : ownerUsername ? { owner: -1 } : {}),
         ...(search ? { $and: [{ $or: [{ title: { $containsi: search } }, { author: { $containsi: search } }] }] } : {}),
-        ...(ctx.query.age ? { age: String(ctx.query.age) } : {}),
-        ...(ctx.query.language ? { language: String(ctx.query.language) } : {}),
+        ...(ages.length ? { age: { $in: ages } } : {}),
+        ...(languages.length ? { language: { $in: languages } } : {}),
         ...(ctx.query.available === 'true' ? { available: true } : ctx.query.available === 'false' ? { available: false } : {}),
         ...(favoritesFilterRequested ? { documentId: favoriteIds.length ? { $in: favoriteIds } : '__no_favorites__' } : {}),
         ...(excludeOwnerId ? { owner: { $ne: excludeOwnerId } } : {}),
